@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — " : "")لوحة التحكم | طِلّة</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="~/css/site.css">
+  @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+<!-- Mobile sidebar toggle -->
+<button class="btn d-lg-none position-fixed"
+        style="bottom:20px;right:20px;z-index:1100;background:var(--foreground);color:#fff;border-radius:50%;width:50px;height:50px;box-shadow:var(--shadow-lg)"
+        onclick="document.querySelector('.admin-sidebar').classList.toggle('show')">
+  <i class="bi bi-list fs-4"></i>
+</button>
+
+<!-- ========== SIDEBAR ========== -->
+<aside class="admin-sidebar">
+  <div class="sidebar-brand">
+    <h4>طِلّة</h4>
+    <p>لوحة التحكم</p>
+  </div>
+
+  <nav class="admin-nav">
+    @{
+      var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
+      var area = ViewContext.RouteData.Values["area"]?.ToString();
+    }
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:0.5rem 0.9rem 0.3rem">الرئيسية</div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminDashboard" asp-action="Index" class="nav-link @(area == "Admin" && ctrl == "AdminDashboard" ? "active" : "")">
+        <i class="bi bi-speedometer2"></i>الداشبورد
+      </a>
+    </div>
+
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:1rem 0.9rem 0.3rem">إدارة المتجر</div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Index" class="nav-link @(area == "Admin" && ctrl == "AdminProducts" ? "active" : "")">
+        <i class="bi bi-box-seam"></i>المنتجات
+      </a>
+    </div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminCategories" asp-action="Index" class="nav-link @(area == "Admin" && ctrl == "AdminCategories" ? "active" : "")">
+        <i class="bi bi-grid-3x3-gap"></i>الأقسام
+      </a>
+    </div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Index" class="nav-link @(area == "Admin" && ctrl == "AdminDiscounts" ? "active" : "")">
+        <i class="bi bi-tag"></i>الخصومات
+      </a>
+    </div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminReviews" asp-action="Index"
+         class="nav-link @(area == "Admin" && ctrl == "AdminReviews" ? "active" : "")">
+        <i class="bi bi-star"></i>التقييمات
+      </a>
+    </div>
+
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:1rem 0.9rem 0.3rem">الطلبات والتوصيل</div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" class="nav-link @(area == "Admin" && ctrl == "AdminOrders" ? "active" : "")">
+        <i class="bi bi-bag-check"></i>الطلبات
+        @if (ViewBag.PendingOrdersCount != null && (int)ViewBag.PendingOrdersCount > 0)
+        {
+          <span class="badge ms-auto rounded-pill"
+                style="background:var(--theme-accent);font-size:0.7rem">@ViewBag.PendingOrdersCount</span>
+        }
+      </a>
+    </div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Index"
+         class="nav-link @(area == "Admin" && ctrl == "AdminDelivery" ? "active" : "")">
+        <i class="bi bi-person-badge"></i>المندوبون
+      </a>
+    </div>
+
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:1rem 0.9rem 0.3rem">المستخدمون</div>
+    <div class="nav-item">
+      <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Index"
+         class="nav-link @(area == "Admin" && ctrl == "AdminCustomers" ? "active" : "")">
+        <i class="bi bi-people"></i>العملاء
+      </a>
+    </div>
+
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;padding:1rem 0.9rem 0.3rem">النظام</div>
+    <div class="nav-item">
+      <a href="/" target="_blank" class="nav-link">
+        <i class="bi bi-box-arrow-up-left"></i>الموقع الرئيسي
+      </a>
+    </div>
+    <div class="nav-item">
+      <form method="post" asp-area="" asp-controller="Account" asp-action="Logout" class="m-0">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="nav-link w-100 text-end border-0 bg-transparent"
+                style="color:rgba(255,255,255,0.5)">
+          <i class="bi bi-box-arrow-left"></i>تسجيل الخروج
+        </button>
+      </form>
+    </div>
+  </nav>
+</aside>
+
+<!-- ========== MAIN CONTENT ========== -->
+<div class="admin-content">
+  <!-- Top Bar -->
+  <div class="admin-topbar">
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0 fw-bold" style="color:var(--muted-foreground)">@ViewData["Title"]</h6>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span style="font-size:0.88rem;color:var(--muted-foreground)">
+        <i class="bi bi-person-circle me-1"></i>@User.Identity!.Name
+      </span>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  @if (TempData["Success"] != null)
+  {
+    <div class="alert alert-success alert-dismissible fade show m-3 mb-0" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  }
+  @if (TempData["Error"] != null)
+  {
+    <div class="alert alert-danger alert-dismissible fade show m-3 mb-0" role="alert">
+      <i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["Error"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  }
+  @if (TempData["Warning"] != null)
+  {
+    <div class="alert alert-warning alert-dismissible fade show m-3 mb-0" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Warning"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  }
+
+  <div class="admin-page-content">@RenderBody()</div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

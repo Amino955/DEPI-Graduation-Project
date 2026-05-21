@@ -1,0 +1,4 @@
+/* /Views/Shared/_Layout.cshtml.rz.scp.css */
+/* This file is intentionally minimal.
+   All styles are defined in wwwroot/css/site.css using CSS variables.
+   Do NOT add hardcoded colors here — use var(--theme-accent), var(--foreground), etc. */

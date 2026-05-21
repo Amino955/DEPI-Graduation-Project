@@ -1,0 +1,239 @@
+@{
+    Layout = "_AdminLayout";
+}
+
+<style>
+  .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .status-badge-lg { padding:6px 12px; border-radius:999px; font-weight:800; }
+  .grid { display:grid; grid-template-columns: 1fr 2fr; gap:1.25rem; align-items:start; }
+  @@media (max-width:991px) { .grid { grid-template-columns: 1fr; } }
+  .card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); overflow:hidden; }
+  .card-header { padding:0.85rem 1rem; background:var(--background-secondary); border-bottom:1px solid var(--border-color); font-weight:700; color:var(--foreground); }
+  .card-body { padding:1rem; }
+  .profile-top { display:flex; gap:1rem; align-items:center; }
+  @@media (max-width:575px) { .profile-top { flex-direction:column; text-align:center; } }
+  .avatar-lg { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.6rem; flex-shrink:0; }
+  .section-stack { display:flex; flex-direction:column; gap:1rem; }
+  .contact-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.75rem; }
+  @@media (max-width:575px) { .contact-grid { grid-template-columns:1fr; } }
+  .info-tile { background:var(--background); border:1px solid var(--border-color); border-radius:10px; padding:0.85rem; }
+  .info-label { font-size:0.8rem; color:var(--muted-foreground); margin-bottom:0.35rem; }
+  .info-value { color:var(--foreground); font-weight:700; word-break:break-word; }
+  .stats-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.75rem; }
+  .stat-box { background:var(--background); border-right:4px solid var(--theme-accent); padding:0.75rem 0.85rem; border-radius:10px; display:flex; flex-direction:column; gap:4px; min-height:84px; justify-content:center; }
+  .stat-value { font-weight:800; color:var(--foreground); }
+  .stat-label { font-size:0.85rem; color:var(--muted-foreground); }
+  .nav-tabs .nav-link.active { color:var(--theme-accent) !important; border-bottom:2px solid var(--theme-accent) !important; }
+  .orders-table { width:100%; border-collapse:collapse; }
+  .orders-table thead { background:var(--background-secondary); }
+  .orders-table th, .orders-table td { padding:12px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); }
+  .orders-table tbody tr:hover { background:var(--background-secondary); }
+  .status-pill { padding:6px 10px; border-radius:999px; font-weight:700; }
+  .muted { color:var(--muted-foreground); }
+  .address-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem; }
+  @@media (max-width:767px) { .address-grid { grid-template-columns:1fr; } }
+  .address-card { background:var(--background); border:1px solid var(--border-color); border-radius:12px; padding:1rem; height:100%; }
+  .address-head { display:flex; justify-content:space-between; align-items:flex-start; gap:0.75rem; margin-bottom:0.85rem; }
+  .address-lines { display:flex; flex-direction:column; gap:0.75rem; }
+  .badge-soft { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; font-size:0.8rem; font-weight:700; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h2 style="margin:0; color:var(--foreground); font-weight:800">@ViewBag.User?.FullName
+            @if (ViewBag.User != null)
+            {
+                <span style="margin-inline-start:8px;">
+                    @if (ViewBag.User.IsActive)
+                    {
+                        <span class="status-badge-lg" style="background:var(--success-bg); color:var(--success);">نشط</span>
+                    }
+                    else
+                    {
+                        <span class="status-badge-lg" style="background:var(--background); color:var(--muted-foreground);">معطل</span>
+                    }
+                </span>
+            }
+        </h2>
+        <div style="color:var(--muted-foreground); margin-top:6px">ملف العميل وتفاصيل الطلبات والعناوين</div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center">
+        <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Index" class="btn" style="border:1px solid var(--border-color); color:var(--foreground);">رجوع</a>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="left-col">
+        <div class="card">
+            <div class="card-body">
+                @{
+                    var initials = ViewBag.User != null && !string.IsNullOrEmpty(ViewBag.User.FullName)
+                        ? ViewBag.User.FullName.Substring(0, 1).ToUpper()
+                        : "?";
+                }
+                <div class="section-stack">
+                    <div class="profile-top">
+                        <div class="avatar-lg" style="background:linear-gradient(135deg,var(--theme-accent), rgba(var(--theme-accent-rgb),0.6));">@initials</div>
+                        <div style="flex:1">
+                            <div style="font-weight:800; color:var(--foreground); font-size:1.1rem">@ViewBag.User?.FullName</div>
+                            <div class="muted" style="margin-top:0.35rem">ملخص سريع لبيانات العميل ونشاطه</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-grid">
+                        <div class="info-tile">
+                            <div class="info-label">البريد الإلكتروني</div>
+                            <div class="info-value">
+                                <a href="mailto:@ViewBag.User?.Email" style="color:inherit; text-decoration:none">@ViewBag.User?.Email</a>
+                            </div>
+                        </div>
+                        <div class="info-tile">
+                            <div class="info-label">رقم الهاتف</div>
+                            <div class="info-value">
+                                <a href="tel:@ViewBag.User?.PhoneNumber" style="color:inherit; text-decoration:none">@ViewBag.User?.PhoneNumber</a>
+                            </div>
+                        </div>
+                        <div class="info-tile" style="grid-column:1 / -1;">
+                            <div class="info-label">تاريخ الانضمام</div>
+                            <div class="info-value">@((ViewBag.User?.CreatedAt as DateTime?)?.ToString("dd/MM/yyyy") ?? "—")</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box" style="border-right-color:#2563EB;">
+                            <div class="stat-value">@((ViewBag.Orders as IEnumerable<dynamic>)?.Count() ?? 0)</div>
+                            <div class="stat-label">إجمالي الطلبات</div>
+                        </div>
+                        <div class="stat-box" style="border-right-color:var(--success);">
+                            <div class="stat-value">@((ViewBag.Orders as IEnumerable<dynamic>)?.Sum(o => (decimal?)o.Total) ?? 0)</div>
+                            <div class="stat-label">إجمالي الإنفاق</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <form method="post" asp-area="Admin" asp-controller="AdminCustomers" asp-action="ToggleActive" asp-route-id="@ViewBag.User?.Id">
+                            @Html.AntiForgeryToken()
+                            @if (ViewBag.User != null && ViewBag.User.IsActive)
+                            {
+                                <button type="submit" class="btn" style="border:1px solid var(--danger); color:var(--danger); background:transparent; width:100%">تعطيل الحساب</button>
+                            }
+                            else
+                            {
+                                <button type="submit" class="btn" style="border:1px solid var(--success); color:var(--success); background:transparent; width:100%">تفعيل الحساب</button>
+                            }
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-col">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-orders" role="tab">الطلبات</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-addresses" role="tab">العناوين</a></li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-orders">
+                        @if (ViewBag.Orders != null && ((IEnumerable<dynamic>)ViewBag.Orders).Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table orders-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>التاريخ</th>
+                                            <th>المبلغ</th>
+                                            <th>الحالة</th>
+                                            <th>إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var o in ViewBag.Orders)
+                                        {
+                                            <tr>
+                                                <td><a asp-area="Admin" asp-controller="AdminOrders" asp-action="Details" asp-route-id="@o.Id" style="color:var(--theme-accent); font-weight:700">#@o.Id</a></td>
+                                                <td class="muted">@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td class="fw-bold" style="color:var(--theme-accent)">@(((decimal)o.Total).ToString("N0")) ج.م</td>
+                                                <td>
+                                                    @{
+                                                        var badge = o.Status switch {
+                                                            TellaStore.Models.Entities.OrderStatus.Pending => (bg: "#FFFBEB", fg: "#D97706", text: "قيد الانتظار"),
+                                                            TellaStore.Models.Entities.OrderStatus.Confirmed => (bg: "#EFF6FF", fg: "#2563EB", text: "مؤكد"),
+                                                            TellaStore.Models.Entities.OrderStatus.Shipped => (bg: "#F5F3FF", fg: "#7C3AED", text: "في الطريق"),
+                                                            TellaStore.Models.Entities.OrderStatus.Delivered => (bg: "var(--success-bg)", fg: "var(--success)", text: "تم التسليم"),
+                                                            TellaStore.Models.Entities.OrderStatus.Cancelled => (bg: "var(--danger-bg)", fg: "var(--danger)", text: "ملغى"),
+                                                            _ => (bg: "transparent", fg: "var(--muted-foreground)", text: o.Status.ToString())
+                                                        };
+                                                    }
+                                                    <span class="status-pill" style="background:@badge.bg; color:@badge.fg">@badge.text</span>
+                                                </td>
+                                                <td>
+                                                    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Details" asp-route-id="@o.Id" class="btn btn-sm" style="border:1px solid var(--theme-accent); color:var(--theme-accent);">عرض</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="muted">لا توجد طلبات.</div>
+                        }
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-addresses">
+                        @if (ViewBag.Addresses != null && ((IEnumerable<dynamic>)ViewBag.Addresses).Any())
+                        {
+                            <div class="address-grid">
+                                @foreach (var a in ViewBag.Addresses)
+                                {
+                                    <div>
+                                        <div class="address-card">
+                                            <div class="address-head">
+                                                <div>
+                                                    <div style="font-weight:700; color:var(--foreground)">@(a.Label ?? "عنوان")</div>
+                                                    <div class="muted" style="margin-top:0.25rem">عنوان محفوظ للعميل</div>
+                                                </div>
+                                                @if (a.IsDefault == true)
+                                                {
+                                                    <span class="badge-soft" style="background:var(--success-bg); color:var(--success)">افتراضي</span>
+                                                }
+                                            </div>
+
+                                            <div class="address-lines">
+                                                <div class="info-tile">
+                                                    <div class="info-label">الشارع</div>
+                                                    <div class="info-value">@(a.Street ?? "—")</div>
+                                                </div>
+                                                <div class="contact-grid">
+                                                    <div class="info-tile">
+                                                        <div class="info-label">المدينة</div>
+                                                        <div class="info-value">@(a.City ?? "—")</div>
+                                                    </div>
+                                                    <div class="info-tile">
+                                                        <div class="info-label">المحافظة</div>
+                                                        <div class="info-value">@(a.Governorate ?? "—")</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="muted">لا توجد عناوين محفوظة.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

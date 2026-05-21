@@ -1,0 +1,467 @@
+﻿@model RegisterViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "إنشاء حساب";
+}
+
+<style>
+  .register-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 80px);
+    gap: 0;
+  }
+
+  @@media (max-width: 768px) {
+    .register-container {
+      grid-template-columns: 1fr;
+    }
+    .register-image {
+      display: none;
+    }
+  }
+
+  .register-image {
+    position: relative;
+    background: var(--foreground);
+    overflow: hidden;
+  }
+
+  .register-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .register-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 75%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .register-image-quote {
+    position: absolute;
+    bottom: 3rem;
+    right: 1.5rem;
+    left: 1.5rem;
+    color: #fff;
+    text-align: right;
+    z-index: 10;
+  }
+
+  .register-image-quote p {
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-style: italic;
+    font-family: var(--font-display);
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .register-form-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    padding: 2rem;
+    overflow-y: auto;
+  }
+
+  .register-form-wrapper {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .register-logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .register-logo h2 {
+    color: var(--theme-accent);
+    font-weight: 800;
+    font-size: 1.8rem;
+    margin: 0;
+    text-decoration: none;
+  }
+
+  .register-heading {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .register-heading h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 1.9rem);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .register-heading p {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .register-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @@media (max-width: 480px) {
+    .form-group-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-label {
+    display: block;
+    color: var(--foreground);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-icon {
+    position: absolute;
+    right: 0.75rem;
+    color: var(--muted-foreground);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 2.5rem 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    transition: all var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  .password-toggle {
+    position: absolute;
+    left: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    transition: color var(--transition);
+  }
+
+  .password-toggle:hover {
+    color: var(--theme-accent);
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1rem 0 1.5rem 0;
+    padding: 0.75rem;
+    background: rgba(var(--theme-accent-rgb), 0.05);
+    border-radius: var(--radius-sm);
+  }
+
+  .form-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--theme-accent);
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .checkbox-label {
+    cursor: pointer;
+    color: var(--foreground);
+    font-weight: 500;
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .checkbox-label a {
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 700;
+    transition: opacity var(--transition);
+  }
+
+  .checkbox-label a:hover {
+    opacity: 0.8;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity var(--transition);
+  }
+
+  .submit-btn:hover {
+    opacity: 0.9;
+  }
+
+  .login-link {
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+
+  .login-link a {
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 700;
+    transition: opacity var(--transition);
+  }
+
+  .login-link a:hover {
+    opacity: 0.8;
+  }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  .alert-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div class="register-container">
+  <!-- Left Side: Image with Quote -->
+  <div class="register-image">
+    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&auto=format&fit=crop" alt="Fashion Lifestyle">
+    <div class="register-image-quote">
+      <p>انضم إلينا واستمتع بأفضل العروض</p>
+    </div>
+  </div>
+
+  <!-- Right Side: Registration Form -->
+  <div class="register-form-side">
+    <div class="register-form-wrapper">
+      <!-- Logo -->
+      <div class="register-logo">
+        <a href="/" style="text-decoration: none;">
+          <h2>طِلّة</h2>
+        </a>
+      </div>
+
+      <!-- Heading -->
+      <div class="register-heading">
+        <h1>إنشاء حساب جديد</h1>
+        <p>انضم إلينا واستمتع بأفضل العروض</p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="register-card">
+        <form method="post" asp-action="Register">
+          @Html.AntiForgeryToken()
+
+          <!-- Validation Summary -->
+          @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+          {
+            <div asp-validation-summary="All" class="alert-danger"></div>
+          }
+
+          <!-- First Name & Last Name Grid -->
+          <div class="form-group-grid">
+            <div>
+              <label asp-for="FirstName" class="form-label">
+                الاسم الأول
+              </label>
+              <input asp-for="FirstName" 
+                     class="form-control" 
+                     placeholder="محمد">
+              <span asp-validation-for="FirstName" class="validation-error"></span>
+            </div>
+            <div>
+              <label asp-for="LastName" class="form-label">
+                الاسم الأخير
+              </label>
+              <input asp-for="LastName" 
+                     class="form-control" 
+                     placeholder="أحمد">
+              <span asp-validation-for="LastName" class="validation-error"></span>
+            </div>
+          </div>
+
+          <!-- Email Field -->
+          <div class="form-group">
+            <label asp-for="Email" class="form-label">
+              البريد الإلكتروني
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="Email" 
+                     type="email" 
+                     class="form-control" 
+                     placeholder="example@email.com"
+                     dir="ltr">
+              <i class="bi bi-envelope input-icon"></i>
+            </div>
+            <span asp-validation-for="Email" class="validation-error"></span>
+          </div>
+
+          <!-- Phone Field -->
+          <!-- <div class="form-group">
+            <label asp-for="PhoneNumber" class="form-label">
+              رقم الهاتف
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="PhoneNumber" 
+                     type="tel" 
+                     class="form-control" 
+                     placeholder="+20 100 123 4567"
+                     dir="ltr">
+              <i class="bi bi-telephone input-icon"></i>
+            </div>
+            <span asp-validation-for="PhoneNumber" class="validation-error"></span>
+          </div> -->
+
+          <!-- Password Field -->
+          <div class="form-group">
+            <label asp-for="Password" class="form-label">
+              كلمة المرور
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="Password" 
+                     type="password" 
+                     class="form-control" 
+                     placeholder="8 أحرف على الأقل"
+                     id="passwordField"
+                     dir="ltr">
+              <i class="bi bi-lock input-icon"></i>
+              <button type="button" 
+                      class="password-toggle"
+                      onclick="togglePassword('passwordField', 'eyeIcon1')"
+                      tabindex="-1">
+                <i class="bi bi-eye" id="eyeIcon1"></i>
+              </button>
+            </div>
+            <span asp-validation-for="Password" class="validation-error"></span>
+          </div>
+
+          <!-- Confirm Password Field -->
+          <div class="form-group">
+            <label asp-for="ConfirmPassword" class="form-label">
+              تأكيد كلمة المرور
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="ConfirmPassword" 
+                     type="password" 
+                     class="form-control" 
+                     placeholder="أعد كتابة كلمة المرور"
+                     id="confirmPasswordField"
+                     dir="ltr">
+              <i class="bi bi-lock input-icon"></i>
+              <button type="button" 
+                      class="password-toggle"
+                      onclick="togglePassword('confirmPasswordField', 'eyeIcon2')"
+                      tabindex="-1">
+                <i class="bi bi-eye" id="eyeIcon2"></i>
+              </button>
+            </div>
+            <span asp-validation-for="ConfirmPassword" class="validation-error"></span>
+          </div>
+
+          <!-- Terms Agreement Checkbox -->
+          <div class="checkbox-group">
+            <input type="checkbox" 
+                   class="form-checkbox"
+                   id="termsAgree"
+                   required>
+            <label class="checkbox-label" for="termsAgree">
+              أوافق على <a href="#">الشروط والأحكام</a> و<a href="#">سياسة الخصوصية</a>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="submit-btn">
+            إنشاء الحساب
+          </button>
+        </form>
+      </div>
+
+      <!-- Login Link -->
+      <p class="login-link">
+        لديك حساب بالفعل؟
+        <a asp-controller="Account" asp-action="Login">
+          تسجيل الدخول
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword(fieldId, iconId) {
+    const passwordField = document.getElementById(fieldId);
+    const eyeIcon = document.getElementById(iconId);
+    
+    if (passwordField.type === 'password') {
+      passwordField.type = 'text';
+      eyeIcon.classList.remove('bi-eye');
+      eyeIcon.classList.add('bi-eye-slash');
+    } else {
+      passwordField.type = 'password';
+      eyeIcon.classList.remove('bi-eye-slash');
+      eyeIcon.classList.add('bi-eye');
+    }
+  }
+</script>

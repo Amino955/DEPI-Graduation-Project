@@ -1,0 +1,295 @@
+@using TellaStore.Models.Entities
+@model List<Review>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "إدارة التقييمات";
+
+    var totalCount    = Model.Count;
+    var approvedCount = Model.Count(r => r.IsApproved);
+    var pendingCount  = Model.Count(r => !r.IsApproved);
+    var avgRating     = totalCount > 0
+                          ? Math.Round(Model.Average(r => (double)r.Rating), 1)
+                          : 0.0;
+
+    // active filter from ViewBag (bool?)
+    bool? currentFilter = ViewBag.Filter as bool?;
+}
+
+<style>
+  /* ── page header ─────────────────────────────────── */
+  .rev-header        { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+  .rev-title         { font-size:1.35rem; font-weight:800; color:var(--foreground); margin:0; }
+  .count-badge       { display:inline-flex; align-items:center; justify-content:center; background:var(--background-secondary); color:var(--muted-foreground); border:1px solid var(--border-color); border-radius:999px; font-size:0.8rem; font-weight:700; padding:2px 10px; }
+
+  /* ── stat cards ──────────────────────────────────── */
+  .stat-row          { display:flex; gap:0.85rem; margin-bottom:1.1rem; flex-wrap:wrap; }
+  .stat-card         { background:var(--card-background); border:1px solid var(--border-color); border-left:4px solid; border-radius:var(--radius-md); padding:0.8rem 1rem; display:flex; align-items:center; gap:0.8rem; min-width:170px; box-shadow:var(--shadow-sm); flex:1; }
+  .stat-icon         { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .stat-val          { font-size:1.15rem; font-weight:800; color:var(--foreground); line-height:1; }
+  .stat-lbl          { font-size:0.78rem; color:var(--muted-foreground); margin-top:2px; }
+
+  /* ── filter tabs ─────────────────────────────────── */
+  .filter-tabs       { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:0.9rem; }
+  .filter-tab        { padding:5px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--card-background); color:var(--muted-foreground); font-size:0.83rem; font-weight:600; text-decoration:none; transition:var(--transition); }
+  .filter-tab:hover  { background:var(--background-secondary); color:var(--foreground); }
+  .filter-tab.active { background:var(--theme-accent); color:#fff; border-color:var(--theme-accent); }
+
+  /* ── card wrapper ────────────────────────────────── */
+  .rev-card          { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); overflow:hidden; }
+
+  /* ── table ───────────────────────────────────────── */
+  .rev-table         { width:100%; border-collapse:collapse; }
+  .rev-table thead   { background:var(--background-secondary); }
+  .rev-table th      { padding:11px 14px; color:var(--muted-foreground); font-weight:600; font-size:0.82rem; border:none; white-space:nowrap; }
+  .rev-table td      { padding:11px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); font-size:0.87rem; vertical-align:middle; }
+  .rev-table tbody tr:last-child td { border-bottom:none; }
+  .rev-table tbody tr:hover { background:var(--background-secondary); }
+
+  /* ── avatar ──────────────────────────────────────── */
+  .user-avatar       { width:34px; height:34px; border-radius:50%; background:var(--theme-accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; flex-shrink:0; }
+
+  /* ── stars ───────────────────────────────────────── */
+  .star-filled       { color:#F59E0B; font-size:0.88rem; }
+  .star-empty        { color:var(--border-color); font-size:0.88rem; }
+  .stars-row         { display:flex; gap:1px; align-items:center; }
+  .stars-num         { font-size:0.78rem; font-weight:700; color:var(--muted-foreground); margin-right:4px; }
+
+  /* ── status pills ────────────────────────────────── */
+  .pill-approved     { background:var(--success-bg); color:var(--success); padding:4px 12px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+  .pill-pending      { background:#FFFBEB; color:#D97706; padding:4px 12px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+
+  /* ── product link ────────────────────────────────── */
+  .product-link      { color:var(--foreground); font-weight:700; text-decoration:none; font-size:0.87rem; }
+  .product-link:hover{ color:var(--theme-accent); text-decoration:underline; }
+
+  /* ── comment cell ────────────────────────────────── */
+  .comment-cell      { max-width:210px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted-foreground); font-size:0.83rem; cursor:help; }
+
+  /* ── action buttons ──────────────────────────────── */
+  .action-row        { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+  .btn-approve       { border:1px solid var(--success); color:var(--success); background:transparent; border-radius:var(--radius-sm); padding:4px 10px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:var(--transition); display:inline-flex; align-items:center; gap:4px; }
+  .btn-approve:hover { background:var(--success-bg); }
+  .btn-delete        { border:1px solid var(--danger); color:var(--danger); background:transparent; border-radius:var(--radius-sm); padding:4px 9px; font-size:0.82rem; cursor:pointer; transition:var(--transition); display:inline-flex; align-items:center; }
+  .btn-delete:hover  { background:var(--danger-bg); }
+
+  /* ── empty state ─────────────────────────────────── */
+  .empty-state       { text-align:center; padding:3rem; color:var(--muted-foreground); }
+  .empty-icon        { font-size:2.5rem; display:block; margin-bottom:0.6rem; opacity:.5; }
+</style>
+
+<!-- ═══ Page Header ═══════════════════════════════════════════════════════ -->
+<div class="rev-header">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <h1 class="rev-title">إدارة التقييمات</h1>
+        <span class="count-badge">@totalCount</span>
+    </div>
+</div>
+
+<!-- ═══ Summary Stats ═════════════════════════════════════════════════════ -->
+<div class="stat-row">
+    <!-- إجمالي التقييمات — blue -->
+    <div class="stat-card" style="border-left-color:#2563EB;">
+        <div class="stat-icon" style="background:#EFF6FF; color:#2563EB;">
+            <i class="bi bi-star"></i>
+        </div>
+        <div>
+            <div class="stat-val">@totalCount</div>
+            <div class="stat-lbl">إجمالي التقييمات</div>
+        </div>
+    </div>
+
+    <!-- متوسط التقييم — amber -->
+    <div class="stat-card" style="border-left-color:#D97706;">
+        <div class="stat-icon" style="background:#FFFBEB; color:#D97706;">
+            <i class="bi bi-star-half"></i>
+        </div>
+        <div>
+            <div class="stat-val">@avgRating <span style="font-size:0.78rem; font-weight:500; color:var(--muted-foreground);">/ 5</span></div>
+            <div class="stat-lbl">متوسط التقييم</div>
+        </div>
+    </div>
+
+    <!-- بانتظار المراجعة — amber -->
+    <div class="stat-card" style="border-left-color:#D97706;">
+        <div class="stat-icon" style="background:#FFFBEB; color:#D97706;">
+            <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div>
+            <div class="stat-val">@pendingCount</div>
+            <div class="stat-lbl">بانتظار المراجعة</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Filter Tabs ════════════════════════════════════════════════════════ -->
+<div class="filter-tabs">
+    <a asp-area="Admin"
+       asp-controller="AdminReviews"
+       asp-action="Index"
+       asp-route-approved=""
+       class="filter-tab @(currentFilter == null ? "active" : "")">
+        الكل
+        <span style="font-size:0.75rem; opacity:.7;">(@totalCount)</span>
+    </a>
+    <a asp-area="Admin"
+       asp-controller="AdminReviews"
+       asp-action="Index"
+       asp-route-approved="false"
+       class="filter-tab @(currentFilter != null && currentFilter == false ? "active" : "")">
+        بانتظار المراجعة
+        <span style="font-size:0.75rem; opacity:.7;">(@pendingCount)</span>
+    </a>
+    <a asp-area="Admin"
+       asp-controller="AdminReviews"
+       asp-action="Index"
+       asp-route-approved="true"
+       class="filter-tab @(currentFilter != null && currentFilter == true ? "active" : "")">
+        معتمدة
+        <span style="font-size:0.75rem; opacity:.7;">(@approvedCount)</span>
+    </a>
+</div>
+
+<!-- ═══ Reviews Table ══════════════════════════════════════════════════════ -->
+<div class="rev-card">
+    <div class="table-responsive">
+        <table class="rev-table">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>العميل</th>
+                    <th>التقييم</th>
+                    <th>التعليق</th>
+                    <th>التاريخ</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var r in Model)
+                    {
+                        var commentFull      = r.Comment ?? "—";
+                        var commentTruncated = commentFull.Length > 80
+                                                ? commentFull.Substring(0, 80) + "..."
+                                                : commentFull;
+                        var userInitial = (!string.IsNullOrEmpty(r.User?.FullName))
+                                            ? r.User.FullName.Substring(0, 1).ToUpper()
+                                            : "؟";
+
+                        <tr>
+                            <!-- المنتج -->
+                            <td>
+                                <a href="/product/@r.Product?.Slug" target="_blank" class="product-link" title="عرض صفحة المنتج">
+                                    @r.Product?.Name
+                                    <i class="bi bi-box-arrow-up-left" style="font-size:0.72rem; opacity:.5; margin-right:3px;"></i>
+                                </a>
+                            </td>
+
+                            <!-- العميل -->
+                            <td>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div class="user-avatar">@userInitial</div>
+                                    <span style="font-weight:600; color:var(--foreground);">@r.User?.FullName</span>
+                                </div>
+                            </td>
+
+                            <!-- التقييم — stars -->
+                            <td>
+                                <div class="stars-row">
+                                    @for (int i = 0; i < r.Rating; i++)
+                                    {
+                                        <i class="bi bi-star-fill star-filled"></i>
+                                    }
+                                    @for (int i = r.Rating; i < 5; i++)
+                                    {
+                                        <i class="bi bi-star star-empty"></i>
+                                    }
+                                    <span class="stars-num">(@r.Rating)</span>
+                                </div>
+                            </td>
+
+                            <!-- التعليق — truncated -->
+                            <td>
+                                <span class="comment-cell" title="@commentFull">@commentTruncated</span>
+                            </td>
+
+                            <!-- التاريخ -->
+                            <td style="color:var(--muted-foreground); font-size:0.82rem; white-space:nowrap;">
+                                @r.CreatedAt.ToString("dd/MM/yyyy")
+                            </td>
+
+                            <!-- الحالة -->
+                            <td>
+                                @if (r.IsApproved)
+                                {
+                                    <span class="pill-approved">معتمد</span>
+                                }
+                                else
+                                {
+                                    <span class="pill-pending">بانتظار المراجعة</span>
+                                }
+                            </td>
+
+                            <!-- إجراءات -->
+                            <td>
+                                <div class="action-row">
+                                    @if (!r.IsApproved)
+                                    {
+                                        <!-- Approve form -->
+                                        <form method="post"
+                                              asp-area="Admin"
+                                              asp-controller="AdminReviews"
+                                              asp-action="Approve"
+                                              asp-route-id="@r.Id"
+                                              class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-approve">
+                                                <i class="bi bi-check-lg"></i>موافقة
+                                            </button>
+                                        </form>
+                                    }
+
+                                    <!-- Delete form -->
+                                    <form method="post"
+                                          asp-area="Admin"
+                                          asp-controller="AdminReviews"
+                                          asp-action="Delete"
+                                          asp-route-id="@r.Id"
+                                          class="m-0"
+                                          onsubmit="return confirm('هل أنت متأكد من حذف هذا التقييم؟')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-delete" title="حذف التقييم">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="bi bi-star empty-icon"></i>
+                                <div style="font-weight:700; color:var(--foreground); font-size:1rem;">لا توجد تقييمات</div>
+                                <div style="font-size:0.85rem; margin-top:4px;">
+                                    @if (currentFilter != null)
+                                    {
+                                        <span>لا توجد تقييمات ضمن هذا الفلتر</span>
+                                    }
+                                    else
+                                    {
+                                        <span>لم يقم أي عميل بتقييم منتج بعد</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

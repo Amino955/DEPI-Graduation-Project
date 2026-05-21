@@ -1,0 +1,409 @@
+﻿@model LoginViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "تسجيل الدخول";
+}
+
+<style>
+  .login-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 80px);
+    gap: 0;
+  }
+
+  @@media (max-width: 768px) {
+    .login-container {
+      grid-template-columns: 1fr;
+    }
+    .login-image {
+      display: none;
+    }
+  }
+
+  .login-image {
+    position: relative;
+    background: var(--foreground);
+    overflow: hidden;
+  }
+
+  .login-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .login-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 75%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .login-image-quote {
+    position: absolute;
+    bottom: 3rem;
+    right: 1.5rem;
+    left: 1.5rem;
+    color: #fff;
+    text-align: right;
+    z-index: 10;
+  }
+
+  .login-image-quote p {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-style: italic;
+    font-family: var(--font-display);
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .login-form-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    padding: 2rem;
+  }
+
+  .login-form-wrapper {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .login-logo h2 {
+    color: var(--theme-accent);
+    font-weight: 800;
+    font-size: 1.8rem;
+    margin: 0;
+    text-decoration: none;
+  }
+
+  .login-heading {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .login-heading h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2rem);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .login-heading p {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .login-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-label {
+    display: block;
+    color: var(--foreground);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-icon {
+    position: absolute;
+    right: 0.75rem;
+    color: var(--muted-foreground);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 2.5rem 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    transition: all var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  .password-toggle {
+    position: absolute;
+    left: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    transition: color var(--transition);
+  }
+
+  .password-toggle:hover {
+    color: var(--theme-accent);
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--theme-accent);
+  }
+
+  .checkbox-label {
+    cursor: pointer;
+    color: var(--foreground);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .forgot-password {
+    display: block;
+    text-align: left;
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: opacity var(--transition);
+    margin-bottom: 1.5rem;
+  }
+
+  .forgot-password:hover {
+    opacity: 0.8;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity var(--transition);
+    margin-bottom: 1rem;
+  }
+
+  .submit-btn:hover {
+    opacity: 0.9;
+  }
+
+  .register-link {
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+
+  .register-link a {
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 700;
+    transition: opacity var(--transition);
+  }
+
+  .register-link a:hover {
+    opacity: 0.8;
+  }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    display: block;
+  }
+
+  .alert-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div class="login-container">
+  <!-- Left Side: Image with Quote -->
+  <div class="login-image">
+    <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80&auto=format&fit=crop" alt="Fashion">
+    <div class="login-image-quote">
+      <p>موضتك تعكس شخصيتك</p>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form -->
+  <div class="login-form-side">
+    <div class="login-form-wrapper">
+      <!-- Logo -->
+      <div class="login-logo">
+        <a href="/" style="text-decoration: none;">
+          <h2>طِلّة</h2>
+        </a>
+      </div>
+
+      <!-- Heading -->
+      <div class="login-heading">
+        <h1>أهلاً بعودتك</h1>
+        <p>سجّل دخولك للمتابعة</p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="login-card">
+        <form method="post" asp-action="Login">
+          @Html.AntiForgeryToken()
+          <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]">
+
+          <!-- Validation Summary -->
+          @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+          {
+            <div asp-validation-summary="All" class="alert-danger"></div>
+          }
+
+          <!-- Email Field -->
+          <div class="form-group">
+            <label asp-for="Email" class="form-label">
+              البريد الإلكتروني
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="Email" 
+                     type="email" 
+                     class="form-control" 
+                     placeholder="example@email.com"
+                     dir="ltr">
+              <i class="bi bi-envelope input-icon"></i>
+            </div>
+            <span asp-validation-for="Email" class="validation-error"></span>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-group">
+            <label asp-for="Password" class="form-label">
+              كلمة المرور
+            </label>
+            <div class="input-wrapper">
+              <input asp-for="Password" 
+                     type="password" 
+                     class="form-control" 
+                     placeholder="••••••••"
+                     id="passwordField"
+                     dir="ltr">
+              <i class="bi bi-lock input-icon"></i>
+              <button type="button" 
+                      class="password-toggle"
+                      onclick="togglePassword()"
+                      tabindex="-1">
+                <i class="bi bi-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+            <span asp-validation-for="Password" class="validation-error"></span>
+          </div>
+
+          <!-- Remember Me -->
+          <div class="checkbox-group">
+            <input asp-for="RememberMe" 
+                   type="checkbox" 
+                   class="form-checkbox"
+                   id="rememberMe">
+            <label class="checkbox-label" for="rememberMe">
+              تذكرني
+            </label>
+          </div>
+
+          <!-- Forgot Password Link -->
+          <a asp-action="ForgotPassword" class="forgot-password">
+            نسيت كلمة المرور؟
+          </a>
+
+          <!-- Submit Button -->
+          <button type="submit" class="submit-btn">
+            تسجيل الدخول
+          </button>
+        </form>
+      </div>
+
+      <!-- Register Link -->
+      <p class="register-link">
+        ليس لديك حساب؟
+        <a asp-controller="Account" asp-action="Register">
+          إنشاء حساب جديد
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword() {
+    const passwordField = document.getElementById('passwordField');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    if (passwordField.type === 'password') {
+      passwordField.type = 'text';
+      eyeIcon.classList.remove('bi-eye');
+      eyeIcon.classList.add('bi-eye-slash');
+    } else {
+      passwordField.type = 'password';
+      eyeIcon.classList.remove('bi-eye-slash');
+      eyeIcon.classList.add('bi-eye');
+    }
+  }
+</script>
+</div>
+
+@section Scripts {
+<script>
+function togglePassword() {
+  const f = document.getElementById('passwordField');
+  const i = document.getElementById('eyeIcon');
+  if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
+  else { f.type = 'password'; i.className = 'bi bi-eye'; }
+}
+</script>
+}

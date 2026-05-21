@@ -1,0 +1,49 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "إضافة مندوب توصيل";
+}
+
+<style>
+  .center-card { max-width:500px; margin:2.5rem auto; }
+  .card-panel { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-xl); padding:2rem; box-shadow:var(--shadow-md); }
+  .form-label { color:var(--foreground); font-weight:700; }
+  .input-group .input-icon { background:var(--background); border:1px solid var(--border-color); border-right:0; padding:0.6rem 0.75rem; border-radius:6px 0 0 6px; color:var(--muted-foreground); }
+  .input-group .form-control { border:1px solid var(--border-color); border-left:0; border-radius:0 6px 6px 0; background:var(--background); color:var(--foreground); padding:0.75rem 0.8rem; }
+  .info-box { background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.12); color:#2563EB; padding:0.75rem 1rem; border-radius:8px; margin-top:1rem; }
+  .btn-accent { background:var(--theme-accent); color:#fff; border-radius:var(--radius-md); padding:10px 14px; width:100%; font-weight:800; }
+  .btn-cancel { display:block; text-align:center; margin-top:0.5rem; color:var(--muted-foreground); }
+</style>
+
+<div class="center-card">
+  <div class="card-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h4 style="margin:0; color:var(--foreground); font-weight:800">إضافة مندوب توصيل</h4>
+        <div class="muted" style="margin-top:6px">أدخل البريد الإلكتروني لعميل مسجّل لتحويله إلى مندوب توصيل.</div>
+      </div>
+      <div>
+        <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Index" class="btn" style="border:1px solid var(--border-color); color:var(--foreground);">رجوع</a>
+      </div>
+    </div>
+
+    <form method="post" asp-area="Admin" asp-controller="AdminDelivery" asp-action="Create">
+      @Html.AntiForgeryToken()
+
+      <label class="form-label">البريد الإلكتروني للمستخدم <span class="text-danger">*</span></label>
+      <div class="input-group mb-3">
+        <span class="input-icon"><i class="bi bi-envelope"></i></span>
+        <input name="email" type="email" required class="form-control" placeholder="example@domain.com" />
+      </div>
+
+      <div class="info-box">
+        <i class="bi bi-info-circle me-2"></i>
+        ملاحظة: يجب أن يكون العميل مسجّلاً في المتجر مسبقاً.
+      </div>
+
+      <div style="margin-top:1.25rem;">
+        <button type="submit" class="btn-accent">تعيين كمندوب توصيل</button>
+        <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Index" class="btn-cancel">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>

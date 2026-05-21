@@ -1,0 +1,353 @@
+@model List<DeliveryAssignment>
+@{
+    Layout = "_AdminLayout";
+    var user = ViewBag.User as ApplicationUser;
+    ViewData["Title"] = "تفاصيل المندوب - " + user?.FullName;
+
+    var totalAssigned   = Model.Count;
+    var totalDelivered  = Model.Count(a => a.Status == DeliveryAssignmentStatus.Delivered);
+    var totalFailed     = Model.Count(a => a.Status == DeliveryAssignmentStatus.Failed);
+    var successRate     = totalAssigned > 0
+                            ? Math.Round(100.0 * totalDelivered / totalAssigned, 1)
+                            : 0.0;
+    // circumference for 56px-diameter circle (r=24): 2π×24 ≈ 150.8
+    var circumference   = 150.8;
+    var dashOffset      = circumference - (circumference * successRate / 100.0);
+
+    var avatarLetter    = !string.IsNullOrEmpty(user?.FullName)
+                            ? user.FullName.Substring(0, 1).ToUpper()
+                            : "?";
+    var regDate         = user?.CreatedAt.ToString("dd/MM/yyyy") ?? "—";
+}
+
+<style>
+  /* ── layout ───────────────────────────────────────── */
+  .details-grid          { display:grid; grid-template-columns:4fr 8fr; gap:1.25rem; align-items:start; }
+  @@media(max-width:900px){ .details-grid { grid-template-columns:1fr; } }
+
+  /* ── page header ─────────────────────────────────── */
+  .page-header           { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+  .page-back             { display:inline-flex; align-items:center; gap:6px; color:var(--muted-foreground); font-size:0.88rem; text-decoration:none; border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:5px 12px; background:var(--card-background); transition:var(--transition); }
+  .page-back:hover       { background:var(--background-secondary); color:var(--foreground); }
+  .page-title-wrap       { display:flex; align-items:center; gap:10px; }
+  .page-title            { font-size:1.35rem; font-weight:800; color:var(--foreground); margin:0; }
+
+  /* ── status pills ────────────────────────────────── */
+  .pill                  { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px; font-size:0.78rem; font-weight:700; }
+  .pill-active           { background:rgba(16,185,129,.12); color:var(--success); }
+  .pill-inactive         { background:var(--background-secondary); color:var(--muted-foreground); }
+  .pill::before          { content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+
+  /* ── cards ───────────────────────────────────────── */
+  .d-card                { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); }
+  .d-card-body           { padding:1.25rem; }
+
+  /* ── profile card ────────────────────────────────── */
+  .avatar-circle         { width:80px; height:80px; border-radius:50%; background:var(--theme-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; margin:0 auto 1rem; }
+  .profile-name          { text-align:center; font-size:1.1rem; font-weight:800; color:var(--foreground); margin-bottom:2px; }
+  .profile-meta          { text-align:center; color:var(--muted-foreground); font-size:0.85rem; margin-bottom:1rem; }
+  .profile-divider       { border:none; border-top:1px solid var(--border-color); margin:1rem 0; }
+  .profile-row           { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border-color); }
+  .profile-row:last-child{ border-bottom:none; }
+  .profile-row-icon      { width:30px; height:30px; border-radius:8px; background:var(--background-secondary); display:flex; align-items:center; justify-content:center; color:var(--theme-accent); font-size:0.9rem; flex-shrink:0; }
+  .profile-row-text      { color:var(--foreground); font-size:0.88rem; }
+  .profile-row-label     { color:var(--muted-foreground); font-size:0.78rem; }
+  .toggle-form           { margin-top:1.1rem; }
+
+  /* ── stat mini-cards ─────────────────────────────── */
+  .stats-row             { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1rem; }
+  @@media(max-width:700px){ .stats-row { grid-template-columns:repeat(2,1fr); } }
+  .stat-mini             { background:var(--card-background); border:1px solid var(--border-color); border-left:4px solid; border-radius:var(--radius-md); padding:0.8rem 0.9rem; box-shadow:var(--shadow-sm); }
+  .stat-mini-val         { font-size:1.3rem; font-weight:800; color:var(--foreground); line-height:1; margin-bottom:3px; }
+  .stat-mini-lbl         { font-size:0.78rem; color:var(--muted-foreground); }
+
+  /* circular progress */
+  .circ-wrap             { display:flex; align-items:center; gap:0.5rem; }
+  .circ-svg              { transform:rotate(-90deg); }
+  .circ-bg               { fill:none; stroke:var(--border-color); stroke-width:4; }
+  .circ-fill             { fill:none; stroke:#7C3AED; stroke-width:4; stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
+  .circ-label            { font-size:1.3rem; font-weight:800; color:var(--foreground); }
+
+  /* ── filter tabs ─────────────────────────────────── */
+  .filter-tabs           { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:0.9rem; }
+  .filter-tab            { padding:5px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--card-background); color:var(--muted-foreground); font-size:0.83rem; font-weight:600; cursor:pointer; transition:var(--transition); }
+  .filter-tab:hover      { background:var(--background-secondary); color:var(--foreground); }
+  .filter-tab.active     { background:var(--theme-accent); color:#fff; border-color:var(--theme-accent); }
+
+  /* ── table ───────────────────────────────────────── */
+  .d-table               { width:100%; border-collapse:collapse; }
+  .d-table thead         { background:var(--background-secondary); }
+  .d-table th            { padding:11px 14px; color:var(--muted-foreground); font-weight:600; font-size:0.83rem; border:none; white-space:nowrap; }
+  .d-table td            { padding:11px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); font-size:0.88rem; vertical-align:middle; }
+  .d-table tbody tr:last-child td { border-bottom:none; }
+  .d-table tbody tr:hover{ background:var(--background-secondary); }
+
+  /* ── delivery status badges ──────────────────────── */
+  .badge-assigned        { background:#EFF6FF; color:#2563EB; padding:4px 10px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+  .badge-ontheway        { background:#F5F3FF; color:#7C3AED; padding:4px 10px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+  .badge-delivered       { background:var(--success-bg); color:var(--success); padding:4px 10px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+  .badge-failed          { background:var(--danger-bg); color:var(--danger); padding:4px 10px; border-radius:999px; font-size:0.77rem; font-weight:700; }
+
+  /* ── misc ────────────────────────────────────────── */
+  .empty-state           { text-align:center; padding:2.5rem; color:var(--muted-foreground); }
+  .order-num             { font-weight:700; color:var(--theme-accent); }
+  .address-cell          { max-width:180px; font-size:0.82rem; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+</style>
+
+<!-- ═══ Page Header ═══════════════════════════════════════════════════════ -->
+<div class="page-header">
+    <div class="page-title-wrap">
+        <h1 class="page-title">@user?.FullName</h1>
+        @if (user?.IsActive == true)
+        {
+            <span class="pill pill-active">نشط</span>
+        }
+        else
+        {
+            <span class="pill pill-inactive">معطّل</span>
+        }
+    </div>
+    <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Index" class="page-back">
+        <i class="bi bi-arrow-right"></i> العودة للقائمة
+    </a>
+</div>
+
+<!-- ═══ Two-Column Grid ════════════════════════════════════════════════════ -->
+<div class="details-grid">
+
+    <!-- ── Left: Profile Card ──────────────────────────────────────────── -->
+    <div class="d-card">
+        <div class="d-card-body">
+            <!-- Avatar -->
+            <div class="avatar-circle">@avatarLetter</div>
+
+            <!-- Name + email -->
+            <div class="profile-name">@user?.FullName</div>
+            <div class="profile-meta">@user?.Email</div>
+
+            <!-- Info rows -->
+            <div class="profile-row">
+                <div class="profile-row-icon"><i class="bi bi-telephone-fill"></i></div>
+                <div>
+                    <div class="profile-row-label">رقم الهاتف</div>
+                    <div class="profile-row-text">@(user?.PhoneNumber ?? "لا يوجد")</div>
+                </div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-row-icon"><i class="bi bi-envelope-fill"></i></div>
+                <div>
+                    <div class="profile-row-label">البريد الإلكتروني</div>
+                    <div class="profile-row-text">@user?.Email</div>
+                </div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-row-icon"><i class="bi bi-calendar3"></i></div>
+                <div>
+                    <div class="profile-row-label">تاريخ التسجيل</div>
+                    <div class="profile-row-text">@regDate</div>
+                </div>
+            </div>
+
+            <hr class="profile-divider" />
+
+            <!-- Toggle active form — keep intact -->
+            <div class="toggle-form">
+                <form method="post"
+                      asp-area="Admin"
+                      asp-controller="AdminDelivery"
+                      asp-action="ToggleActive"
+                      asp-route-id="@user?.Id">
+                    @Html.AntiForgeryToken()
+                    @if (user?.IsActive == true)
+                    {
+                        <button type="submit" class="btn btn-sm w-100"
+                                style="border:1px solid var(--danger); color:var(--danger); border-radius:var(--radius-sm);">
+                            <i class="bi bi-pause-circle me-1"></i>إيقاف تفعيل المندوب
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-sm w-100"
+                                style="border:1px solid var(--success); color:var(--success); border-radius:var(--radius-sm);">
+                            <i class="bi bi-play-circle me-1"></i>تفعيل المندوب
+                        </button>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Right: Stats + Table ─────────────────────────────────────────── -->
+    <div>
+
+        <!-- Performance Stats Row -->
+        <div class="stats-row">
+            <!-- الطلبات المُسنَدة — blue -->
+            <div class="stat-mini" style="border-left-color:#2563EB;">
+                <div class="stat-mini-val" style="color:#2563EB;">@totalAssigned</div>
+                <div class="stat-mini-lbl">الطلبات المُسنَدة</div>
+            </div>
+
+            <!-- تم التسليم — green -->
+            <div class="stat-mini" style="border-left-color:var(--success);">
+                <div class="stat-mini-val" style="color:var(--success);">@totalDelivered</div>
+                <div class="stat-mini-lbl">تم التسليم</div>
+            </div>
+
+            <!-- فشل التسليم — red -->
+            <div class="stat-mini" style="border-left-color:var(--danger);">
+                <div class="stat-mini-val" style="color:var(--danger);">@totalFailed</div>
+                <div class="stat-mini-lbl">فشل التسليم</div>
+            </div>
+
+            <!-- نسبة النجاح — purple + CSS circular progress -->
+            <div class="stat-mini" style="border-left-color:#7C3AED;">
+                <div class="circ-wrap">
+                    <svg class="circ-svg" width="40" height="40" viewBox="0 0 56 56">
+                        <circle class="circ-bg" cx="28" cy="28" r="24" />
+                        <circle class="circ-fill" cx="28" cy="28" r="24"
+                                stroke-dasharray="@circumference.ToString("F1")"
+                                stroke-dashoffset="@dashOffset.ToString("F1")" />
+                    </svg>
+                    <div>
+                        <div class="circ-label">@successRate<span style="font-size:0.8rem">%</span></div>
+                        <div class="stat-mini-lbl">نسبة النجاح</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Orders Card -->
+        <div class="d-card">
+            <div class="d-card-body">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem; flex-wrap:wrap; gap:8px;">
+                    <div style="font-weight:700; color:var(--foreground);">الطلبات المُسنَدة</div>
+
+                    <!-- Filter Tabs (JS-powered, no page reload) -->
+                    <div class="filter-tabs" id="filterTabs">
+                        <button class="filter-tab active" data-filter="all" type="button">الكل <span style="font-size:0.75rem;opacity:.7;">(@Model.Count)</span></button>
+                        <button class="filter-tab" data-filter="ontheway" type="button">في الطريق <span style="font-size:0.75rem;opacity:.7;">(@Model.Count(a => a.Status == DeliveryAssignmentStatus.OnTheWay))</span></button>
+                        <button class="filter-tab" data-filter="delivered" type="button">تم التسليم <span style="font-size:0.75rem;opacity:.7;">(@totalDelivered)</span></button>
+                        <button class="filter-tab" data-filter="failed" type="button">فشل <span style="font-size:0.75rem;opacity:.7;">(@totalFailed)</span></button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="d-table" id="assignmentsTable">
+                        <thead>
+                            <tr>
+                                <th>رقم الطلب</th>
+                                <th>العميل</th>
+                                <th>العنوان</th>
+                                <th>تاريخ التكليف</th>
+                                <th>الحالة</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                @foreach (var a in Model)
+                                {
+                                    var filterVal = a.Status switch
+                                    {
+                                        DeliveryAssignmentStatus.Assigned  => "assigned",
+                                        DeliveryAssignmentStatus.OnTheWay  => "ontheway",
+                                        DeliveryAssignmentStatus.Delivered => "delivered",
+                                        DeliveryAssignmentStatus.Failed    => "failed",
+                                        _                                  => "assigned"
+                                    };
+                                    var addressShort = $"{a.Order.ShippingCity}، {a.Order.ShippingGovernorate}";
+                                    <tr data-status="@filterVal">
+                                        <td><span class="order-num">#@a.OrderId</span></td>
+                                        <td>@a.Order.User?.FullName</td>
+                                        <td>
+                                            <div class="address-cell" title="@a.Order.ShippingStreet، @a.Order.ShippingCity، @a.Order.ShippingGovernorate">
+                                                @addressShort
+                                            </div>
+                                        </td>
+                                        <td style="color:var(--muted-foreground); font-size:0.82rem;">
+                                            @a.AssignedAt.ToString("dd/MM/yyyy HH:mm")
+                                        </td>
+                                        <td>
+                                            @switch (a.Status)
+                                            {
+                                                case DeliveryAssignmentStatus.Assigned:
+                                                    <span class="badge-assigned">قيد التعيين</span>
+                                                    break;
+                                                case DeliveryAssignmentStatus.OnTheWay:
+                                                    <span class="badge-ontheway">في الطريق</span>
+                                                    break;
+                                                case DeliveryAssignmentStatus.Delivered:
+                                                    <span class="badge-delivered">تم التسليم</span>
+                                                    break;
+                                                case DeliveryAssignmentStatus.Failed:
+                                                    <span class="badge-failed">فشل التسليم</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            <a asp-area="Admin"
+                                               asp-controller="AdminOrders"
+                                               asp-action="Details"
+                                               asp-route-id="@a.OrderId"
+                                               class="btn btn-sm"
+                                               style="border:1px solid var(--theme-accent); color:var(--theme-accent); border-radius:var(--radius-sm); font-size:0.8rem;">
+                                                <i class="bi bi-eye me-1"></i>عرض الطلب
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox" style="font-size:2.2rem; display:block; margin-bottom:8px;"></i>
+                                            <div style="font-weight:700; color:var(--foreground);">لا توجد طلبات مُسنَدة</div>
+                                            <div style="font-size:0.85rem; margin-top:4px;">لم يُعيَّن لهذا المندوب أي طلب بعد</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty filtered state (hidden by default) -->
+                <div id="emptyFiltered" style="display:none;" class="empty-state">
+                    <i class="bi bi-funnel" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+                    <div style="font-weight:700; color:var(--foreground);">لا توجد نتائج لهذا الفلتر</div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /right -->
+</div><!-- /grid -->
+
+<script>
+(function () {
+    const tabs  = document.querySelectorAll('#filterTabs .filter-tab');
+    const rows  = document.querySelectorAll('#assignmentsTable tbody tr[data-status]');
+    const empty = document.getElementById('emptyFiltered');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+            let visible  = 0;
+
+            rows.forEach(row => {
+                const match = filter === 'all' || row.dataset.status === filter;
+                row.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+
+            empty.style.display = visible === 0 ? 'block' : 'none';
+        });
+    });
+})();
+</script>

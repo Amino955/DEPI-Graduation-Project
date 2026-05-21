@@ -1,0 +1,557 @@
+@using TellaStore.Models.Entities
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    var displayName = currentUser?.FullName;
+    if (string.IsNullOrWhiteSpace(displayName))
+    {
+        displayName = !string.IsNullOrWhiteSpace(currentUser?.FirstName)
+            ? currentUser.FirstName
+            : User.Identity?.Name ?? "حسابي";
+    }
+    var userInitial = !string.IsNullOrWhiteSpace(displayName) ? displayName.Substring(0, 1).ToUpper() : "ح";
+}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="@(ViewContext.HttpContext.RequestServices
+    .GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()!
+    .GetAndStoreTokens(ViewContext.HttpContext).RequestToken)" />
+  <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — " : "")طِلّة</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="~/css/site.css" />
+  @await RenderSectionAsync("Styles", required: false)
+  <style>
+    .navbar-shell {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+    .navbar-tella {
+      padding: 0.9rem 0;
+    }
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      text-decoration: none;
+    }
+    .brand-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--theme-accent), rgba(var(--theme-accent-rgb), 0.6));
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 14px 30px rgba(var(--theme-accent-rgb), 0.18);
+    }
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brand-title {
+      color: var(--foreground);
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+    .brand-subtitle {
+      color: var(--muted-foreground);
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+    .navbar-toggler {
+      border: 1px solid var(--border-color) !important;
+      background: var(--card-background);
+      color: var(--foreground) !important;
+      border-radius: 12px;
+      padding: 0.5rem 0.7rem;
+      box-shadow: none !important;
+    }
+    .nav-pills-shell {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem;
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      background: rgba(var(--theme-accent-rgb), 0.04);
+      margin: 0 auto;
+    }
+    .navbar-tella .nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0.7rem 1rem !important;
+      border-radius: 999px;
+      color: var(--muted-foreground) !important;
+      font-weight: 700;
+      transition: background-color var(--transition), color var(--transition), transform var(--transition);
+    }
+    .navbar-tella .nav-link:hover,
+    .navbar-tella .nav-link:focus {
+      color: var(--foreground) !important;
+      background: rgba(var(--theme-accent-rgb), 0.08);
+      transform: translateY(-1px);
+    }
+    .navbar-tella .nav-link.active {
+      color: #fff !important;
+      background: linear-gradient(135deg, var(--theme-accent), rgba(var(--theme-accent-rgb), 0.82));
+      box-shadow: 0 10px 25px rgba(var(--theme-accent-rgb), 0.2);
+    }
+    .nav-link.dropdown-toggle::after {
+      margin-right: 0.45rem;
+      margin-left: 0;
+    }
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+    .navbar-icon-btn {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: var(--card-background);
+      color: var(--foreground);
+      text-decoration: none;
+      transition: transform var(--transition), color var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+    .navbar-icon-btn:hover {
+      color: var(--theme-accent) !important;
+      border-color: rgba(var(--theme-accent-rgb), 0.35);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(var(--theme-accent-rgb), 0.12);
+    }
+    .navbar-badge {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--card-background);
+    }
+    .account-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      min-height: 46px;
+      padding: 0.35rem 0.5rem 0.35rem 0.85rem;
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      background: var(--card-background);
+      color: var(--foreground);
+    }
+    .account-trigger:hover,
+    .account-trigger:focus {
+      border-color: rgba(var(--theme-accent-rgb), 0.35);
+      color: var(--foreground);
+      box-shadow: 0 10px 24px rgba(var(--theme-accent-rgb), 0.1);
+    }
+    .account-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--theme-accent), rgba(var(--theme-accent-rgb), 0.68));
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .account-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.05;
+    }
+    .account-name {
+      max-width: 145px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+    .account-label {
+      color: var(--muted-foreground);
+      font-size: 0.74rem;
+    }
+    .auth-btn {
+      min-height: 44px;
+      padding: 0.75rem 1rem;
+      border-radius: 999px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-btn-outline {
+      border: 1px solid var(--border-color);
+      color: var(--foreground);
+      background: var(--card-background);
+    }
+    .auth-btn-solid {
+      background: linear-gradient(135deg, var(--theme-accent), rgba(var(--theme-accent-rgb), 0.82));
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(var(--theme-accent-rgb), 0.18);
+    }
+    .dropdown-panel {
+      border: 1px solid var(--border-color) !important;
+      background: var(--card-background);
+      border-radius: 18px;
+      box-shadow: 0 22px 50px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+    .dropdown-item {
+      color: var(--foreground);
+    }
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+      background: rgba(var(--theme-accent-rgb), 0.07);
+      color: var(--foreground);
+    }
+    .search-bar-shell {
+      display: none;
+      border-top: 1px solid var(--border-color);
+      background: rgba(var(--theme-accent-rgb), 0.04);
+    }
+    .search-form-shell {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.9rem 0;
+    }
+    .search-form-shell .form-control {
+      min-height: 48px;
+      border-radius: 16px;
+      background: var(--card-background);
+      border: 1px solid var(--border-color);
+      color: var(--foreground);
+    }
+    .search-submit-btn,
+    .search-close-btn {
+      min-width: 48px;
+      min-height: 48px;
+      border-radius: 14px;
+    }
+    @@media (max-width: 991px) {
+      .navbar-collapse {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 22px;
+        background: var(--card-background);
+        box-shadow: var(--shadow-sm);
+      }
+      .nav-pills-shell {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: 22px;
+        padding: 0.5rem;
+      }
+      .navbar-actions {
+        margin-top: 1rem;
+        justify-content: space-between;
+      }
+      .account-trigger {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .auth-btn {
+        flex: 1;
+      }
+      .search-form-shell {
+        flex-wrap: wrap;
+      }
+      .search-form-shell .form-control {
+        width: 100%;
+      }
+    }
+  </style>
+
+</head>
+<body class="theme-transition">
+  @Html.AntiForgeryToken()
+
+<div class="navbar-shell">
+  <nav class="navbar-tella navbar navbar-expand-lg">
+    <div class="container">
+      <a class="brand-mark" href="/">
+        <span class="brand-badge">ط</span>
+        <span class="brand-copy">
+          <span class="brand-title">طِلّة</span>
+          <span class="brand-subtitle">ستايل مرتب لكل يوم</span>
+        </span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="تبديل القائمة">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav nav-pills-shell">
+          <li class="nav-item">
+            <a class="nav-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">الرئيسية</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link @(currentController == "Products" && string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["categorySlug"]) ? "active" : "")" asp-controller="Products" asp-action="Index">المنتجات</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle @((currentController == "Products" && !string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["categorySlug"])) ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown">الأقسام</a>
+            <ul class="dropdown-menu dropdown-menu-start dropdown-panel py-2">
+              <li><a class="dropdown-item py-2" asp-controller="Products" asp-action="Index" asp-route-categorySlug="men"><i class="bi bi-person me-2" style="color: var(--theme-accent)"></i>رجالي</a></li>
+              <li><a class="dropdown-item py-2" asp-controller="Products" asp-action="Index" asp-route-categorySlug="women"><i class="bi bi-person-heart me-2" style="color: var(--theme-accent)"></i>حريمي</a></li>
+              <li><a class="dropdown-item py-2" asp-controller="Products" asp-action="Index" asp-route-categorySlug="kids"><i class="bi bi-emoji-smile me-2" style="color: var(--theme-accent)"></i>أطفال</a></li>
+            </ul>
+          </li>
+          @if (User.Identity?.IsAuthenticated == true)
+          {
+            <li class="nav-item">
+              <a class="nav-link @(currentController == "Orders" && currentAction == "MyOrders" ? "active" : "")" asp-controller="Orders" asp-action="MyOrders">طلباتي</a>
+            </li>
+          }
+        </ul>
+
+        <div class="ms-auto navbar-actions">
+          <button class="navbar-icon-btn" type="button" onclick="toggleSearchBar()" title="بحث" aria-label="فتح البحث">
+            <i class="bi bi-search"></i>
+          </button>
+
+          @if (User.Identity?.IsAuthenticated == true)
+          {
+            <a href="/wishlist" class="navbar-icon-btn" title="المفضلة" aria-label="المفضلة">
+              <i class="bi bi-heart"></i>
+              <span class="navbar-badge wishlist-count-badge" style="display:none; background: var(--theme-accent)">0</span>
+            </a>
+
+            <div class="dropdown">
+              <button class="navbar-icon-btn" id="notifBtn" title="الإشعارات" aria-label="الإشعارات"
+                      data-bs-toggle="dropdown" data-bs-auto-close="outside" onclick="loadNotificationDropdown()">
+                <i class="bi bi-bell"></i>
+                <span class="navbar-badge notification-count-badge" style="display:none; background: var(--theme-accent)">0</span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-start dropdown-panel p-0 tella-notification-menu" id="notification-dropdown">
+                <div class="notification-menu-header">
+                  <span class="fw-bold fs-6" style="color: var(--foreground)">الإشعارات</span>
+                  <button class="btn btn-sm btn-link text-decoration-none p-0 small" onclick="markAllRead()" style="color: var(--theme-accent)">تعليم الكل كمقروء</button>
+                </div>
+                <div id="notification-dropdown-content">
+                  <div class="text-center p-4 text-muted">
+                    <i class="bi bi-bell fs-3 d-block mb-2"></i>
+                    <small>جاري التحميل...</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <a href="/cart" class="navbar-icon-btn" title="السلة" aria-label="السلة">
+            <i class="bi bi-bag"></i>
+            <span class="navbar-badge cart-count-badge" style="display:none; background: var(--theme-accent)">0</span>
+          </a>
+
+          @if (User.Identity?.IsAuthenticated == true)
+          {
+            <div class="dropdown">
+              <button class="account-trigger dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="account-avatar">@userInitial</span>
+                <span class="account-copy">
+                  <span class="account-name">@displayName</span>
+                  <span class="account-label">حسابي</span>
+                </span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-start dropdown-panel py-2">
+                <li><a class="dropdown-item py-2" href="/account/profile"><i class="bi bi-person me-2"></i>حسابي</a></li>
+                <li><a class="dropdown-item py-2" href="/orders/myorders"><i class="bi bi-bag-check me-2"></i>طلباتي</a></li>
+                <li><a class="dropdown-item py-2" href="/wishlist"><i class="bi bi-heart me-2"></i>المفضلة</a></li>
+                <li><a class="dropdown-item py-2" href="/account/addresses"><i class="bi bi-geo-alt me-2"></i>عناويني</a></li>
+                <li><hr class="dropdown-divider my-1" style="border-top-color: var(--border-color)"></li>
+                <li>
+                  <form method="post" action="/account/logout" class="px-3 py-1">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm w-100 text-danger border-0 bg-transparent text-end">
+                      <i class="bi bi-box-arrow-left me-2"></i>تسجيل الخروج
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          }
+          else
+          {
+            <a href="/account/login" class="auth-btn auth-btn-outline">تسجيل دخول</a>
+            <a href="/account/register" class="auth-btn auth-btn-solid">إنشاء حساب</a>
+          }
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="navbar-search-bar" class="search-bar-shell">
+    <div class="container">
+      <form method="get" action="/products" class="search-form-shell">
+        <input type="text" name="SearchTerm" class="form-control" placeholder="ابحث عن منتج أو فئة..." />
+        <button type="submit" class="btn search-submit-btn" style="background:var(--theme-accent);color:#fff;">
+          <i class="bi bi-search"></i>
+        </button>
+        <button type="button" class="btn search-close-btn" onclick="toggleSearchBar()" style="border:1px solid var(--border-color); color: var(--foreground); background: var(--card-background);">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+  <div class="alert alert-success alert-dismissible fade show m-0 rounded-0 border-0 border-bottom border-success" role="alert" style="background:#f0fdf4;color:#065f46">
+    <div class="container d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>@TempData["Success"]</span>
+      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+  </div>
+}
+@if (TempData["Error"] != null)
+{
+  <div class="alert alert-danger alert-dismissible fade show m-0 rounded-0 border-0 border-bottom border-danger" role="alert">
+    <div class="container d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>@TempData["Error"]</span>
+      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+  </div>
+}
+@if (TempData["Warning"] != null)
+{
+  <div class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0 border-bottom border-warning" role="alert">
+    <div class="container d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>@TempData["Warning"]</span>
+      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+  </div>
+}
+
+<main>@RenderBody()</main>
+
+<footer class="site-footer" style="background: #111827; color: rgba(255,255,255,0.75); padding:3rem 0 1.5rem; margin-top:4rem">
+  <div class="container">
+    <div class="row g-4 pb-4" style="border-bottom:1px solid rgba(255,255,255,0.1)">
+      <div class="col-lg-4">
+        <h5 class="text-white fw-bold fs-4 mb-2">طِلّة</h5>
+        <p style="color:rgba(255,255,255,0.55);font-size:0.9rem;line-height:1.8">
+          متجرك المفضل للملابس الراقية — رجالي، حريمي، أطفال.<br>
+          أفضل جودة بأفضل أسعار في مصر.
+        </p>
+      </div>
+      <div class="col-lg-2 col-6">
+        <h6 class="text-white fw-bold mb-3" style="font-size:0.9rem;letter-spacing:0.04em">روابط سريعة</h6>
+        <ul class="list-unstyled" style="font-size:0.88rem">
+          <li class="mb-2"><a asp-controller="Home" asp-action="Index" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">الرئيسية</a></li>
+          <li class="mb-2"><a asp-controller="Products" asp-action="Index" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">جميع المنتجات</a></li>
+          <li class="mb-2"><a asp-controller="Products" asp-action="Index" asp-route-categorySlug="men" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">رجالي</a></li>
+          <li class="mb-2"><a asp-controller="Products" asp-action="Index" asp-route-categorySlug="women" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">حريمي</a></li>
+          <li class="mb-2"><a asp-controller="Products" asp-action="Index" asp-route-categorySlug="kids" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">أطفال</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-3 col-6">
+        <h6 class="text-white fw-bold mb-3" style="font-size:0.9rem;letter-spacing:0.04em">حسابك</h6>
+        <ul class="list-unstyled" style="font-size:0.88rem">
+          <li class="mb-2"><a asp-controller="Account" asp-action="Profile" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">بياناتي</a></li>
+          <li class="mb-2"><a asp-controller="Orders" asp-action="MyOrders" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">طلباتي</a></li>
+          <li class="mb-2"><a asp-controller="Wishlist" asp-action="Index" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">المفضلة</a></li>
+          <li class="mb-2"><a asp-controller="Account" asp-action="Addresses" class="text-decoration-none" style="color:rgba(255,255,255,0.6)">عناويني</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-3">
+        <h6 class="text-white fw-bold mb-3" style="font-size:0.9rem;letter-spacing:0.04em">تواصل معنا</h6>
+        <p style="color:rgba(255,255,255,0.6);font-size:0.88rem;margin-bottom:8px">
+          <i class="bi bi-envelope me-2"></i>info@tella.com
+        </p>
+        <p style="color:rgba(255,255,255,0.6);font-size:0.88rem">
+          <i class="bi bi-clock me-2"></i>السبت – الخميس: 9ص – 6م
+        </p>
+        <div class="d-flex gap-2 mt-3">
+          <a href="#" class="navbar-icon-btn" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center">
+            <i class="bi bi-instagram"></i>
+          </a>
+          <a href="#" class="navbar-icon-btn" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center">
+            <i class="bi bi-facebook"></i>
+          </a>
+          <a href="#" class="navbar-icon-btn" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center">
+            <i class="bi bi-whatsapp"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="text-center pt-3" style="font-size:0.82rem;color:rgba(255,255,255,0.4)">
+      © @DateTime.Now.Year طِلّة — جميع الحقوق محفوظة
+    </div>
+  </div>
+</footer>
+
+<div id="toast-container"></div>
+
+<div class="theme-float">
+  <button class="theme-float-btn" id="bgPickerBtn" title="تغيير الخلفية" aria-label="تغيير الخلفية">
+    <i class="bi bi-palette"></i>
+  </button>
+  <button class="theme-float-btn" id="accentPickerBtn" title="تغيير اللون" aria-label="تغيير لون التمييز">
+    <i class="bi bi-droplet-half"></i>
+  </button>
+</div>
+<div class="theme-overlay" id="themeOverlay"></div>
+<div class="theme-modal" id="themeModal">
+  <div class="theme-modal-header">
+    <h3 class="theme-modal-title" id="themeModalTitle">اختر الخلفية</h3>
+    <button class="theme-modal-close" id="themeModalClose" aria-label="إغلاق">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  <div class="theme-tabs">
+    <button class="theme-tab active" data-tab="bg">الخلفيات</button>
+    <button class="theme-tab" data-tab="accent">الألوان</button>
+  </div>
+  <div class="theme-content" id="themeContent"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

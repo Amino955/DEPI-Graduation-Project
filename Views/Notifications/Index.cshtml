@@ -1,0 +1,374 @@
+﻿@model List<Notification>
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "الإشعارات";
+}
+
+<style>
+  /* Container */
+  .notifications-container {
+    max-width: 750px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  /* Header */
+  .notifications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-left h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    margin: 0;
+  }
+
+  .header-icon {
+    font-size: 1.3rem;
+    color: var(--theme-accent);
+  }
+
+  .mark-all-read-btn {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-md);
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mark-all-read-btn:hover {
+    background: var(--background);
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+  }
+
+  /* Notifications List */
+  .notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Notification Item */
+  .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition);
+    cursor: pointer;
+  }
+
+  .notification-item:last-child {
+    border-bottom: none;
+  }
+
+  .notification-item:hover {
+    background-color: var(--background-secondary);
+  }
+
+  .notification-item.unread {
+    background-color: rgba(var(--theme-accent-rgb), 0.05);
+  }
+
+  .notification-item.unread:hover {
+    background-color: rgba(var(--theme-accent-rgb), 0.08);
+  }
+
+  /* Icon Circle */
+  .notification-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .icon-info {
+    background: #DBEAFE;
+    color: #0284C7;
+  }
+
+  .icon-success {
+    background: #DCFCE7;
+    color: #16A34A;
+  }
+
+  .icon-warning {
+    background: #FEF3C7;
+    color: #D97706;
+  }
+
+  .icon-danger {
+    background: #FEE2E2;
+    color: #DC2626;
+  }
+
+  .icon-order {
+    background: rgba(124, 58, 237, 0.1);
+    color: #7C3AED;
+  }
+
+  .icon-default {
+    background: var(--background-secondary);
+    color: var(--muted-foreground);
+  }
+
+  /* Content */
+  .notification-content {
+    flex: 1;
+  }
+
+  .notification-title {
+    font-weight: 700;
+    color: var(--foreground);
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .notification-item.unread .notification-title {
+    color: var(--foreground);
+  }
+
+  .notification-item.read .notification-title {
+    color: var(--muted-foreground);
+    font-weight: 600;
+  }
+
+  .notification-message {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+    line-height: 1.4;
+    margin: 0.5rem 0;
+  }
+
+  .notification-timestamp {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-top: 0.5rem;
+  }
+
+  /* Link Styling */
+  .notification-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .notification-link:hover .notification-title {
+    color: var(--theme-accent);
+  }
+
+  /* Unread Indicator */
+  .unread-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--theme-accent);
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @@keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    color: var(--muted-foreground);
+    display: block;
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
+  }
+
+  .empty-state-title {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .empty-state-description {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* Card Wrapper */
+  .notifications-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+</style>
+
+<div class="notifications-container">
+  <!-- Header -->
+  <div class="notifications-header">
+    <div class="header-left">
+      <i class="bi bi-bell header-icon"></i>
+      <h1>الإشعارات</h1>
+    </div>
+    @if (Model.Any())
+    {
+      <button class="mark-all-read-btn" onclick="markAllAsRead()">
+        <i class="bi bi-check-all"></i>
+        تعليم الكل كمقروء
+      </button>
+    }
+  </div>
+
+  @if (!Model.Any())
+  {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <i class="bi bi-bell-slash empty-state-icon"></i>
+      <h2 class="empty-state-title">لا توجد إشعارات جديدة</h2>
+      <p class="empty-state-description">
+        ستظهر الإشعارات هنا عند حدوث تحديثات على طلباتك والعروض الخاصة
+      </p>
+    </div>
+  }
+  else
+  {
+    <!-- Notifications List Card -->
+    <div class="notifications-card">
+      <div class="notifications-list">
+        @foreach (var n in Model)
+        {
+          var iconData = n.Type switch {
+              NotificationType.OrderConfirmed   => (Icon: "✓", Class: "icon-success"),
+              NotificationType.OrderShipped     => (Icon: "🚚", Class: "icon-info"),
+              NotificationType.OrderDelivered   => (Icon: "📦", Class: "icon-success"),
+              NotificationType.OrderCancelled   => (Icon: "✕", Class: "icon-danger"),
+              NotificationType.LowStock         => (Icon: "⚠", Class: "icon-warning"),
+              NotificationType.NewOrder         => (Icon: "🛍", Class: "icon-order"),
+              _                                 => (Icon: "🔔", Class: "icon-default")
+            };
+
+          <div class="notification-item @(n.IsRead ? "read" : "unread")">
+            <!-- Icon Circle -->
+            <div class="notification-icon-circle @iconData.Class">
+              @iconData.Icon
+            </div>
+
+            <!-- Content -->
+            <div class="notification-content">
+              @if (!string.IsNullOrEmpty(n.Link))
+              {
+                <a href="@n.Link" class="notification-link">
+                  <h3 class="notification-title">@n.Title</h3>
+                </a>
+              }
+              else
+              {
+                <h3 class="notification-title">@n.Title</h3>
+              }
+
+              @if (!string.IsNullOrEmpty(n.Message))
+              {
+                <p class="notification-message">@n.Message</p>
+              }
+
+              <div class="notification-timestamp">
+                @n.CreatedAt.ToString("dd/MM/yyyy — HH:mm")
+              </div>
+            </div>
+
+            <!-- Unread Indicator -->
+            @if (!n.IsRead)
+            {
+              <div class="unread-indicator"></div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+@section Scripts {
+<script>
+  function markAllAsRead() {
+    if (confirm('هل تريد تعليم جميع الإشعارات كمقروءة؟')) {
+      fetch('/notifications/markallread', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  }
+
+document.getElementById('markAllReadBtn')?.addEventListener('click', async () => {
+    try {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                   || document.querySelector('meta[name="csrf-token"]')?.content
+                   || '';
+        const response = await fetch('/notifications/markallread', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'RequestVerificationToken': token
+            }
+        });
+        if (response.ok) {
+            // Hide unread indicators
+            document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
+            document.querySelectorAll('.notif-item').forEach(el => el.classList.remove('unread'));
+        }
+    } catch (err) {
+        console.error('Failed to mark all as read:', err);
+    }
+});
+</script>
+}
+

@@ -1,0 +1,113 @@
+@model Order
+@{
+  Layout = "_DeliveryLayout";
+  ViewData["Title"] = "الطلب #" + Model.Id;
+
+  string? rawPhone = null;
+  string? waMsg = null;
+  if (!string.IsNullOrEmpty(Model.CustomerPhone))
+  {
+      rawPhone = Model.CustomerPhone!.Replace("+", "").Replace(" ", "").Replace("-", "");
+      if (rawPhone.StartsWith("0")) rawPhone = "2" + rawPhone;
+      waMsg = Uri.EscapeDataString($"مرحباً {Model.User?.FullName}، أنا مندوب طِلّة وأنا في طريقي لتوصيل طلبك رقم #{Model.Id}");
+  }
+
+  var mapQuery = $"{Model.ShippingStreet} {Model.ShippingCity} {Model.ShippingGovernorate}";
+  var mapUrl = "https://www.google.com/maps/search/?api=1&query=" + Uri.EscapeDataString(mapQuery);
+}
+
+<style>
+  .info-grid { display:flex; gap:1rem; flex-wrap:wrap }
+  .info-card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1rem }
+  .meta { color:var(--muted-foreground); font-size:0.95rem }
+  .map-link { color:var(--theme-accent); text-decoration:none; font-weight:700 }
+  .delivery-code-input { font-size: 2rem; font-weight:700; letter-spacing:0.6rem; text-align:center; border:2px solid var(--border-color); border-radius:var(--radius-lg); padding:1rem; background:var(--background); color:var(--foreground); width:220px }
+  .delivery-code-input:focus { border-color:var(--theme-accent); box-shadow:0 0 0 3px rgba(var(--theme-accent-rgb),0.15); outline:none }
+</style>
+
+<div dir="rtl" lang="ar">
+  <a href="/delivery" class="btn btn-sm mb-3" style="border: 1px solid var(--border-color); color: var(--foreground); border-radius: var(--radius-sm)">
+    <i class="bi bi-arrow-right me-1"></i>العودة للقائمة
+  </a>
+
+  <h4 class="fw-bold mb-4" style="color: var(--foreground)">
+    <i class="bi bi-bag me-2" style="color:var(--theme-accent)"></i>الطلب #@Model.Id
+  </h4>
+
+  <div class="info-grid mb-3">
+    <div class="info-card" style="flex:1;min-width:260px">
+      <h6 class="fw-bold mb-2" style="color:var(--foreground)"><i class="bi bi-person-circle me-2" style="color:var(--theme-accent)"></i>بيانات العميل</h6>
+      <div class="mb-2"><strong style="color:var(--foreground)">@Model.User?.FullName</strong></div>
+      @if (!string.IsNullOrEmpty(Model.CustomerPhone))
+      {
+        <div class="mb-2">
+          <a href="tel:@Model.CustomerPhone" class="btn btn-sm" style="background:var(--success);color:#fff;border:none;border-radius:8px;padding:6px 10px">
+            <i class="bi bi-telephone-fill me-2"></i>اتصال: @Model.CustomerPhone
+          </a>
+          <a href="https://wa.me/@rawPhone?text=@waMsg" target="_blank" rel="noopener noreferrer" class="btn btn-sm ms-2" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:6px 10px">
+            <i class="bi bi-whatsapp me-2"></i>واتساب
+          </a>
+        </div>
+      }
+      <div class="meta mb-2"><i class="bi bi-geo-alt me-1" style="color:var(--theme-accent)"></i> @Model.ShippingStreet، @Model.ShippingCity، @Model.ShippingGovernorate</div>
+      <div class="mb-2"><a href="@mapUrl" target="_blank" class="map-link"><i class="bi bi-map me-1"></i>عرض على الخريطة</a></div>
+      @if (!string.IsNullOrEmpty(Model.ShippingNotes))
+      {
+        <div class="p-2 rounded-2" style="background:var(--warning-bg);color:#92400E;font-size:0.9rem; border:1px solid var(--warning)">
+          <i class="bi bi-exclamation-circle me-2"></i>@Model.ShippingNotes
+        </div>
+      }
+    </div>
+
+    <div class="info-card" style="flex:1;min-width:260px">
+      <h6 class="fw-bold mb-3" style="color: var(--foreground)"><i class="bi bi-box-seam me-2" style="color:var(--theme-accent)"></i>المنتجات</h6>
+      @foreach (var item in Model.Items)
+      {
+        <div class="d-flex gap-2 mb-2 pb-2" style="border-bottom:1px solid var(--border-color)">
+          <div class="flex-grow-1" style="font-size:0.95rem">
+            <div class="fw-bold" style="color: var(--foreground)">@item.ProductName</div>
+            <div style="color:var(--muted-foreground)">@item.Color — @item.Size — كمية: @item.Quantity</div>
+          </div>
+          <div class="fw-bold" style="color:var(--theme-accent)">@item.TotalPrice.ToString("N0") ج</div>
+        </div>
+      }
+      <div class="d-flex justify-content-between pt-2">
+        <span class="fw-bold" style="color: var(--foreground)">الإجمالي:</span>
+        <span class="fw-bold fs-5" style="color:var(--success)">@Model.Total.ToString("N0") جنيه</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-card mb-3" style="background: var(--background-secondary); border:1px solid var(--border-color)">
+    <h5 class="fw-bold mb-3 text-center" style="color: var(--foreground)"><i class="bi bi-key-fill me-2" style="color:var(--theme-accent)"></i>تأكيد التسليم بالكود</h5>
+    <p class="text-center mb-3" style="font-size:0.95rem;color:var(--muted-foreground)">اطلب من العميل كود التسليم المكوّن من 4 أرقام</p>
+    <form method="post" asp-controller="Delivery" asp-action="VerifyCode" asp-route-orderId="@Model.Id">
+      @Html.AntiForgeryToken()
+      <div class="text-center mb-3">
+        <input name="code" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off" class="delivery-code-input d-block mx-auto" placeholder="0000">
+      </div>
+      <button type="submit" class="btn btn-lg w-100 py-3 fw-bold text-white" style="background: var(--theme-accent); border-radius: var(--radius-md); font-weight:700">
+        <i class="bi bi-check2-circle me-2"></i>تأكيد التسليم
+      </button>
+    </form>
+  </div>
+
+  <div class="info-card" style="border-color:var(--danger)">
+    <button class="btn btn-sm w-100 d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#failedCollapse" style="background:none;border:none;color:var(--danger)">
+      <span class="fw-bold"><i class="bi bi-x-circle me-2"></i>تسجيل فشل التسليم</span>
+      <i class="bi bi-chevron-down"></i>
+    </button>
+    <div class="collapse mt-3" id="failedCollapse">
+      <form method="post" asp-controller="Delivery" asp-action="ReportFailed" asp-route-orderId="@Model.Id">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+          <label class="form-label fw-bold" style="color: var(--foreground)">سبب فشل التسليم <span class="text-danger">*</span></label>
+          <textarea name="reason" required class="form-control" rows="3" placeholder="مثلاً: العميل غير متواجد، الهاتف لا يرد، عنوان خاطئ..." style="background: var(--background) !important; border-color: var(--border-color) !important; color: var(--foreground) !important"></textarea>
+        </div>
+        <button type="submit" class="btn btn-danger w-100 fw-bold">
+          <i class="bi bi-exclamation-triangle me-2"></i>تأكيد فشل التسليم
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

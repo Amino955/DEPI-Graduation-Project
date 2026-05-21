@@ -1,0 +1,236 @@
+@model IPagedList<TellaStore.Models.Entities.Product>
+@using System.Linq
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "المنتجات";
+    var search = Context.Request.Query["search"].ToString();
+    var categoryId = Context.Request.Query["categoryId"].ToString();
+    var showInactive = Context.Request.Query["showInactive"].ToString();
+}
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+
+<style>
+  .premium-card {
+    background: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 1rem;
+  }
+  .form-label { color: var(--foreground) !important; font-weight: 500 !important; }
+  .form-control, .form-select { background: var(--background) !important; border-color: var(--border-color) !important; color: var(--foreground) !important; border-radius: var(--radius-sm); }
+  .form-control:focus, .form-select:focus { border-color: var(--theme-accent) !important; box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.15) !important; }
+
+  .admin-table { width:100%; border-collapse:collapse; }
+  .admin-table thead tr { background: var(--background-secondary) !important; }
+  .admin-table th { color: var(--muted-foreground) !important; font-weight:600; padding:12px 16px; border:none; }
+  .admin-table td { padding:12px 16px; border-bottom:1px solid var(--border-color) !important; color:var(--foreground); vertical-align:middle; }
+  .admin-table tbody tr { transition: background-color var(--transition); }
+  .admin-table tbody tr:hover { background: var(--background-secondary) !important; }
+
+  .badge-pill { padding:4px 10px; border-radius:999px; font-weight:600; font-size:0.82rem; }
+  .btn-outline-accent { border:1px solid var(--theme-accent); color:var(--theme-accent); background:transparent; }
+  .btn-outline-danger { border:1px solid var(--danger); color:var(--danger); background:transparent; }
+  .btn-outline-amber { border:1px solid #D97706; color:#D97706; background:transparent; }
+
+  .product-name { font-weight:700; color:var(--foreground); }
+  .muted { color:var(--muted-foreground); }
+  .empty-state { padding:2rem; text-align:center; color:var(--muted-foreground); }
+  .edit-btn { border: 1px solid var(--border-color) !important; color: var(--foreground) !important; background: transparent !important; border-radius: var(--radius-sm) !important; }
+  .edit-btn:hover { background: var(--background-secondary) !important; }
+
+  @@media (max-width:767px) {
+  }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-3" style="gap:1rem;">
+    <div>
+        <h4 class="mb-0" style="color:var(--foreground); font-weight:700;">إدارة المنتجات <span class="muted" style="font-weight:500;">(@Model.TotalItemCount منتج)</span></h4>
+    </div>
+    <div>
+        <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Create" class="btn btn-sm" style="background:var(--theme-accent); color:white; border-radius:var(--radius-md); font-weight:700;">
+            <i class="bi bi-plus-lg me-1"></i> إضافة منتج جديد
+        </a>
+    </div>
+</div>
+
+<!-- Filter/Search Bar -->
+<div class="premium-card mb-4">
+    <form method="get" class="d-flex align-items-center filter-inline" role="search" style="gap:0.75rem;">
+        <div style="flex:1; min-width:180px;">
+            <label class="form-label small">ابحث باسم المنتج</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background:var(--background); border:1px solid var(--border-color); color:var(--muted-foreground);"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control" value="@search" placeholder="ابحث باسم المنتج...">
+            </div>
+        </div>
+
+        <div style="width:220px;">
+            <label class="form-label small">القسم</label>
+            <select name="categoryId" asp-items="ViewBag.Categories" class="form-select">
+                <option value="">جميع الأقسام</option>
+            </select>
+        </div>
+
+        <div style="min-width:140px; display:flex; align-items:end; gap:0.5rem;">
+            <div class="form-check" style="margin-bottom:0.25rem;">
+                <input class="form-check-input" type="checkbox" value="true" id="showInactive" name="showInactive" @(showInactive == "true" ? "checked" : "") />
+                <label class="form-check-label small muted" for="showInactive">عرض غير النشط</label>
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:end; gap:0.5rem;">
+            <button type="submit" class="btn btn-sm" style="background:var(--theme-accent); color:#fff; border-radius:var(--radius-sm);">تطبيق</button>
+            <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Index" class="btn btn-sm btn-outline-secondary" style="border-radius:var(--radius-sm);">إعادة</a>
+        </div>
+    </form>
+</div>
+
+<!-- Products Table -->
+<div class="premium-card p-0" style="overflow:hidden;">
+    <div class="table-responsive">
+        <table class="table admin-table mb-0">
+            <thead>
+                <tr>
+                    <th style="width:70px">الصورة</th>
+                    <th>الاسم</th>
+                    <th>القسم</th>
+                    <th>السعر</th>
+                    <th>المخزون</th>
+                    <th>الموسم</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var product in Model)
+                    {
+                        var mainImage = product.Images?.FirstOrDefault(i => i.IsMain)?.ImageUrl
+                                     ?? product.Images?.FirstOrDefault()?.ImageUrl
+                                     ;
+                        var stock = product.Variants?.Sum(v => v.Stock) ?? 0;
+                        var stockInt = (int)stock;
+                        string seasonLabel = product.Season switch
+                        {
+                            TellaStore.Models.Entities.Season.Summer => "صيفي",
+                            TellaStore.Models.Entities.Season.Winter => "شتوي",
+                            TellaStore.Models.Entities.Season.AllSeason => "كل الأوقات",
+                            _ => "غير مدخل"
+                        };
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(mainImage))
+                                {
+                                    <img src="@mainImage" alt="@product.Name" style="width:50px;height:60px;object-fit:cover;border:1px solid var(--border-color);border-radius:6px;" />
+                                }
+                                else
+                                {
+                                    <div class="thumb-fallback"><i class="bi bi-image" style="font-size:18px;"></i></div>
+                                }
+                            </td>
+                            <td style="vertical-align:middle;">
+                                <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Edit" asp-route-id="@product.Id" class="product-name">@product.Name</a>
+                                @if (product.IsFeatured)
+                                {
+                                    <div class="d-inline-block ms-2"><span class="badge bg-warning text-dark">مميز</span></div>
+                                }
+                            </td>
+                            <td class="muted">@product.Category?.Name</td>
+                            <td style="color:var(--theme-accent); font-weight:700;">@product.BasePrice.ToString("N0") ج</td>
+                            <td>
+                                @if (stockInt <= 0)
+                                {
+                                    <span class="badge-pill" style="background:var(--danger-bg); color:var(--danger);">نفذ</span>
+                                }
+                                else if (stockInt < 5)
+                                {
+                                    <span class="badge-pill" style="background:#FFFBEB; color:#D97706;">منخفض</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-pill" style="background:var(--success-bg); color:var(--success);">@stockInt</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge-pill" style="background:var(--background); color:var(--muted-foreground);">@seasonLabel</span>
+                            </td>
+                            <td>                                @if (product.IsActive)
+                                {
+                                    <span class="badge-pill" style="background:var(--success-bg); color:var(--success);">نشط</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-pill" style="background:var(--background); color:var(--muted-foreground);">معطّل</span>
+                                }
+                            </td>
+                            <td>                                <div class="d-flex" style="gap:0.4rem;">
+                                    <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm edit-btn" title="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" asp-area="Admin" asp-controller="AdminProducts" asp-action="ToggleActive" asp-route-id="@product.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-amber" title="تبديل الحالة">
+                                            <i class="bi @(product.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i>
+                                        </button>
+                                    </form>
+
+                                    <form method="post" asp-area="Admin" asp-controller="AdminProducts" asp-action="Delete" asp-route-id="@product.Id" class="d-inline" onsubmit="return confirmDelete(this);">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="confirm" value="true" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <i class="bi bi-box-seam" style="font-size:36px; display:block; margin-bottom:8px; color:var(--muted-foreground);"></i>
+                                <div style="font-weight:700; color:var(--foreground);">لا توجد منتجات</div>
+                                <div style="margin-top:8px;">
+                                    <a asp-area="Admin" asp-controller="AdminProducts" asp-action="Create" class="btn btn-sm" style="background:var(--theme-accent); color:#fff; margin-top:8px;">أضف منتجاً جديداً</a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (Model.PageCount > 1)
+{
+    <div class="d-flex justify-content-center mt-4">
+        @Html.PagedListPager(Model, page => Url.Action("Index", "AdminProducts", new { area = "Admin", page, search, categoryId, showInactive = showInactive }),
+            new PagedListRenderOptions
+            {
+                DisplayLinkToFirstPage = PagedListDisplayMode.IfNeeded,
+                DisplayLinkToLastPage = PagedListDisplayMode.IfNeeded,
+                DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                MaximumPageNumbersToDisplay = 5,
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" },
+                ContainerDivClasses = new[] { "pagination" }
+            })
+    </div>
+}
+
+<script>
+  function confirmDelete(form) {
+    if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) return true;
+    return false;
+  }
+</script>

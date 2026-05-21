@@ -1,0 +1,624 @@
+﻿@model ProductDetailsViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = Model.Product.Name;
+  var mainImage = Model.Product.Images?.FirstOrDefault(i => i.IsMain)?.ImageUrl
+               ?? Model.Product.Images?.FirstOrDefault()?.ImageUrl
+               ?? "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&q=80&auto=format&fit=crop";
+  var discountPercent = Model.HasDiscount && Model.OriginalPrice > 0
+      ? (int)Math.Round((Model.OriginalPrice - Model.FinalPrice) / Model.OriginalPrice * 100)
+      : 0;
+  var inStock = Model.Product.IsInStock;
+  string seasonLabel;
+  if (Model.Product.Season == Season.Summer) seasonLabel = "صيفي";
+  else if (Model.Product.Season == Season.Winter) seasonLabel = "شتوي";
+  else seasonLabel = "كل الأوقات";
+}
+
+<style>
+  .details-gallery {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--background-secondary);
+    position: relative;
+  }
+  .details-gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease, opacity 0.2s ease;
+    display: block;
+  }
+  .details-gallery:hover img {
+    transform: scale(1.03);
+  }
+  .gallery-overlay-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2;
+    font-size: 1rem;
+  }
+  .thumb-strip {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    margin-top: 1rem;
+  }
+  .thumb-strip::-webkit-scrollbar {
+    height: 6px;
+  }
+  .thumb-strip::-webkit-scrollbar-thumb {
+    background: rgba(156,163,175,0.35);
+    border-radius: 999px;
+  }
+  .img-thumb {
+    min-width: 84px;
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+  .img-thumb:hover,
+  .img-thumb.active {
+    border-color: var(--theme-accent);
+    transform: translateY(-2px);
+  }
+  .featured-pill {
+    background: var(--theme-accent);
+    color: var(--background);
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--radius-lg);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .stock-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .stock-status span.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .color-swatch {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .color-swatch:hover {
+    transform: scale(1.08);
+  }
+  .color-swatch.selected {
+    border-color: var(--theme-accent) !important;
+  }
+  .size-btn {
+    border: 1px solid var(--border-color);
+    background: var(--background);
+    color: var(--foreground);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 1.2rem;
+    font-weight: 700;
+    transition: background var(--transition), border-color var(--transition), color var(--transition);
+  }
+  .size-btn:hover:not(.disabled) {
+    border-color: var(--theme-accent);
+  }
+  .size-btn.selected {
+    background: var(--theme-accent);
+    border-color: var(--theme-accent);
+    color: var(--background) !important;
+  }
+  .size-btn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .qty-control {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--card-background);
+    display: inline-flex;
+  }
+  .qty-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    background: var(--background-secondary);
+    color: var(--foreground);
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  .qty-btn:hover {
+    background: var(--border-color);
+  }
+  .qty-input {
+    width: 58px;
+    border: none;
+    text-align: center;
+    background: transparent;
+    color: var(--foreground);
+    font-weight: 700;
+  }
+  .trust-badges {
+    gap: 0.75rem;
+  }
+  .trust-badge {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+    min-width: 180px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .review-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+  }
+  .review-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    background: rgba(var(--theme-accent-rgb),0.12);
+    color: var(--theme-accent);
+  }
+  .nav-tabs .nav-link {
+    color: var(--muted-foreground) !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    background: transparent !important;
+    transition: color var(--transition), border-color var(--transition);
+    padding: 0.9rem 1.1rem;
+  }
+  .nav-tabs .nav-link.active {
+    color: var(--theme-accent) !important;
+    border-bottom: 2px solid var(--theme-accent) !important;
+    background: transparent !important;
+  }
+  .spec-list dt {
+    color: var(--muted-foreground);
+  }
+  .spec-list dd {
+    color: var(--foreground);
+    margin-bottom: 0.75rem;
+  }
+</style>
+
+<div class="container py-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none" style="color: var(--muted-foreground)">الرئيسية</a></li>
+      <li class="breadcrumb-item"><a asp-controller="Products" asp-action="Index" class="text-decoration-none" style="color: var(--muted-foreground)">المنتجات</a></li>
+      <li class="breadcrumb-item"><a asp-controller="Products" asp-action="Index" asp-route-CategoryId="@Model.Product.CategoryId" class="text-decoration-none" style="color: var(--muted-foreground)">@Model.Product.Category?.Name</a></li>
+      <li class="breadcrumb-item active text-truncate" aria-current="page" style="color: var(--theme-accent); font-weight: 700; max-width:240px;">@Model.Product.Name</li>
+    </ol>
+  </nav>
+
+  <div class="row g-5">
+    <!-- ===== IMAGES ===== -->
+    <div class="col-lg-6">
+      <div class="details-gallery" style="aspect-ratio:3/4;">
+        <img id="main-image" src="@mainImage" alt="@Model.Product.Name">
+        <button type="button" class="btn btn-sm gallery-overlay-btn" onclick="openLightbox()" style="background: rgba(255,255,255,0.92); color: var(--foreground); border-radius: var(--radius-lg);">
+          <i class="bi bi-arrows-fullscreen"></i>
+        </button>
+      </div>
+
+      @if (Model.Product.Images?.Count > 1)
+      {
+        <div class="thumb-strip">
+          @foreach (var img in Model.Product.Images.OrderBy(i => i.SortOrder))
+          {
+            var isActive = img.ImageUrl == mainImage ? "active" : string.Empty;
+            <img src="@img.ImageUrl" alt="" class="img-thumb @isActive" onclick="switchImage('@img.ImageUrl', this)">
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ===== PRODUCT INFO ===== -->
+    <div class="col-lg-6">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        @if (Model.Product.IsFeatured)
+        {
+          <span class="featured-pill">مميز ⭐</span>
+        }
+        <span class="badge rounded-pill" style="background: var(--background-secondary); color: var(--muted-foreground); font-weight:700;">@seasonLabel</span>
+      </div>
+
+      <h1 class="fw-bold" style="font-size:2rem;color:var(--foreground);">@Model.Product.Name</h1>
+
+      @if (Model.Reviews.Any())
+      {
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+          <div class="stars">
+            @for (int i = 1; i <= 5; i++)
+            {
+              <i class="bi bi-star-fill" style="color:@(i <= Math.Round(Model.AverageRating) ? "#F59E0B" : "var(--border-color)")"></i>
+            }
+          </div>
+          <span style="color:var(--muted-foreground);">@Model.AverageRating.ToString("F1") · @Model.Reviews.Count تقييم</span>
+        </div>
+      }
+
+      <div class="mb-4 p-4 rounded-4" style="background: var(--background-secondary); border:1px solid var(--border-color);">
+        @if (Model.HasDiscount)
+        {
+          <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+            <div>
+              <div style="font-size:2.6rem;font-weight:800;color:var(--theme-accent);">@Model.FinalPrice.ToString("N0") <span style="font-size:1rem;">جنيه</span></div>
+              <div style="color:var(--muted-foreground);font-size:0.95rem;">السعر الأصلي <span style="text-decoration:line-through;color:var(--muted-foreground);">@Model.OriginalPrice.ToString("N0") جنيه</span></div>
+            </div>
+            <span style="background: rgba(239,68,68,0.16); color: #B91C1C; border-radius: var(--radius-lg); padding:0.65rem 0.95rem; font-weight:700;">
+              وفّر @discountPercent%
+            </span>
+          </div>
+        }
+        else
+        {
+          <div style="font-size:2.6rem;font-weight:800;color:var(--foreground);">@Model.FinalPrice.ToString("N0") <span style="font-size:1rem;">جنيه</span></div>
+        }
+
+        <div class="stock-status mt-3">
+          <span class="dot" style="background:@(inStock ? "#16A34A" : "#EF4444");"></span>
+          @(inStock ? "متاح" : "نفذ المخزون")
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <p class="fw-bold mb-2" style="color:var(--foreground);">اللون:</p>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div id="selected-color-label" style="color:var(--muted-foreground);font-size:0.95rem;">لم يتم اختيار لون بعد</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2" id="color-swatches">
+          @foreach (var color in Model.AvailableColors)
+          {
+            var hex = Model.Variants.FirstOrDefault(v => v.Color == color)?.ColorHex ?? "#888";
+            <button type="button" class="color-swatch" style="background:@hex" data-color="@color" data-hex="@hex" onclick="selectColor('@color', '@hex')" aria-label="@color"></button>
+          }
+        </div>
+        <div class="mt-2" style="color:var(--muted-foreground);font-size:0.92rem;">اختر اللون لرؤية المقاسات المتاحة.</div>
+      </div>
+
+      <div class="mb-4">
+        <p class="fw-bold mb-2" style="color:var(--foreground);">المقاس:</p>
+        <div id="size-buttons" class="d-flex flex-wrap gap-2">
+          <span style="color:var(--muted-foreground);">اختر اللون أولاً</span>
+        </div>
+        <p id="stock-info" class="mt-3" style="font-size:0.95rem;color:var(--muted-foreground);"></p>
+      </div>
+
+      <div class="mb-4">
+        <p class="fw-bold mb-2" style="color:var(--foreground);">الكمية:</p>
+        <div class="qty-control">
+          <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input type="number" id="qty-input" value="1" min="1" max="99" class="qty-input" readonly>
+          <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <div class="d-grid gap-3 mb-3">
+        <button id="add-to-cart-btn" class="btn btn-lg text-white" data-variant-id="" onclick="addToCart()" disabled style="background: var(--theme-accent); border-radius: var(--radius-lg); padding: 14px 24px; font-weight:700;">
+          <i class="bi bi-bag-plus me-2"></i>أضف للسلة
+        </button>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+          <button class="btn btn-outline-secondary btn-lg wishlist-btn-details" data-product-id="@Model.Product.Id" onclick="toggleWishlist(@Model.Product.Id)" style="border-radius: var(--radius-lg); padding: 14px 24px;">
+            <i class="bi bi-heart@(Model.IsInWishlist ? "-fill text-danger" : "") me-2"></i>
+            @(Model.IsInWishlist ? "في المفضلة" : "أضف للمفضلة")
+          </button>
+        }
+      </div>
+
+      <div class="d-flex flex-wrap trust-badges">
+        <div class="trust-badge">
+          <i class="bi bi-arrow-repeat fs-5" style="color:var(--theme-accent)"></i>
+          <div>
+            <div style="font-weight:700;color:var(--foreground);">إرجاع مجاني</div>
+            <small style="color:var(--muted-foreground);">خلال 14 يوماً</small>
+          </div>
+        </div>
+        <div class="trust-badge">
+          <i class="bi bi-shield-lock fs-5" style="color:var(--theme-accent)"></i>
+          <div>
+            <div style="font-weight:700;color:var(--foreground);">دفع آمن</div>
+            <small style="color:var(--muted-foreground);">حماية بياناتك</small>
+          </div>
+        </div>
+        <div class="trust-badge">
+          <i class="bi bi-truck fs-5" style="color:var(--theme-accent)"></i>
+          <div>
+            <div style="font-weight:700;color:var(--foreground);">توصيل سريع</div>
+            <small style="color:var(--muted-foreground);">من الباب إلى الباب</small>
+          </div>
+        </div>
+      </div>
+
+      @if (!string.IsNullOrEmpty(Model.Product.Description))
+      {
+        <div class="mt-5 p-4 rounded-4" style="background: var(--background-secondary); border:1px solid var(--border-color);">
+          <p class="mb-0" style="font-size:0.95rem;color:var(--muted-foreground);line-height:1.9;">
+            @(Model.Product.Description.Length > 220 ? Model.Product.Description.Substring(0, 220) + "..." : Model.Product.Description)
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ===== TABS: Description / Reviews / Specs ===== -->
+  <div class="mt-5">
+    <ul class="nav nav-tabs border-bottom-0">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-desc">الوصف</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-reviews">التقييمات (@Model.Reviews.Count)</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-specs">المواصفات</button>
+      </li>
+    </ul>
+
+    <div class="tab-content pt-4">
+      <div class="tab-pane fade show active" id="tab-desc">
+        <div class="rounded-4 p-4" style="background: var(--background-secondary); border:1px solid var(--border-color);">
+          <div style="color: var(--foreground); font-size:1rem; line-height:1.9;">
+            @Html.Raw(Model.Product.Description ?? "<p>لا يوجد وصف تفصيلي لهذا المنتج.</p>")
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-reviews">
+        @if (Model.Reviews.Any())
+        {
+          <div class="row g-4 mb-4">
+            <div class="col-md-3 rounded-4 p-4" style="background: var(--background-secondary); border:1px solid var(--border-color); text-align:center;">
+              <div style="font-size:3rem;font-weight:800;color:var(--foreground);">@Model.AverageRating.ToString("F1")</div>
+              <div class="stars my-2">
+                @for (int i = 1; i <= 5; i++)
+                {
+                  <i class="bi bi-star-fill" style="color:@(i <= Math.Round(Model.AverageRating) ? "#F59E0B" : "var(--border-color)")"></i>
+                }
+              </div>
+              <div style="color:var(--muted-foreground);">@Model.Reviews.Count تقييم</div>
+            </div>
+            <div class="col-md-9">
+              @for (int star = 5; star >= 1; star--)
+              {
+                var count = Model.Reviews.Count(r => r.Rating == star);
+                var pct = Model.Reviews.Count > 0 ? (count * 100 / Model.Reviews.Count) : 0;
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span style="width:40px;color:var(--muted-foreground);font-size:0.9rem;">@star <i class="bi bi-star-fill" style="color:#F59E0B;font-size:0.75rem"></i></span>
+                  <div class="flex-grow-1 bg-light rounded-pill overflow-hidden" style="height:8px;">
+                    <div style="width:@pct%;height:100%;background:#F59E0B;border-radius:4px;"></div>
+                  </div>
+                  <span style="width:35px;text-align:left;color:var(--muted-foreground);font-size:0.9rem;">@count</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          @foreach (var r in Model.Reviews.Take(5))
+          {
+            var reviewerName = r.User?.FullName ?? r.User?.FirstName ?? "مستخدم";
+            <div class="review-card p-4 mb-3">
+              <div class="d-flex align-items-start gap-3 mb-3">
+                <div class="review-avatar">@reviewerName.Substring(0,1)</div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                    <div>
+                      <div style="font-weight:700;color:var(--foreground);">@reviewerName</div>
+                      <small style="color:var(--muted-foreground);">@r.CreatedAt.ToString("dd/MM/yyyy")</small>
+                    </div>
+                    <div>
+                      @for (int i = 1; i <= 5; i++)
+                      {
+                        <i class="bi bi-star-fill" style="font-size:0.8rem;color:@(i <= r.Rating ? "#F59E0B" : "var(--border-color)")"></i>
+                      }
+                    </div>
+                  </div>
+                  @if (!string.IsNullOrEmpty(r.Comment))
+                  {
+                    <p style="color:var(--muted-foreground);line-height:1.8;">@r.Comment</p>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+        else
+        {
+          <div class="text-center py-5" style="color:var(--muted-foreground);">
+            <i class="bi bi-chat-square-text fs-2 d-block mb-3"></i>
+            <p class="mb-0">لا توجد تقييمات حتى الآن — كن أول من يشارك رأيه!</p>
+          </div>
+        }
+
+        @if (Model.CanReview)
+        {
+          <div class="mt-4 rounded-4 p-4" style="background: var(--background-secondary); border:1px solid var(--border-color);">
+            <h6 class="fw-bold mb-3" style="color:var(--foreground);">✍️ أضف تقييمك</h6>
+            <form method="post" asp-controller="Reviews" asp-action="Submit">
+              @Html.AntiForgeryToken()
+              <input name="productId" type="hidden" value="@Model.Product.Id">
+              <div class="mb-3">
+                <label class="form-label" style="color:var(--foreground);">التقييم</label>
+                <div class="d-flex gap-2 flex-wrap">
+                  @for (int i = 1; i <= 5; i++)
+                  {
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="rating" value="@i" id="star@i" @(i == 5 ? "checked" : "")>
+                      <label class="form-check-label" for="star@i" style="color:var(--foreground);">@i ⭐</label>
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="mb-3">
+                <textarea name="comment" class="form-control" rows="4" placeholder="شاركنا رأيك في المنتج..." style="background: var(--background); border-color: var(--border-color); color: var(--foreground);"></textarea>
+              </div>
+              <button type="submit" class="btn" style="background: var(--theme-accent); color: #fff; border-radius: var(--radius-lg); font-weight:700;">
+                <i class="bi bi-send me-2"></i>إرسال التقييم
+              </button>
+            </form>
+          </div>
+        }
+      </div>
+
+      <div class="tab-pane fade" id="tab-specs">
+        <div class="rounded-4 p-4" style="background: var(--background-secondary); border:1px solid var(--border-color);">
+          <dl class="row spec-list g-3 mb-0">
+            <dt class="col-sm-4">السعر الأساسي</dt>
+            <dd class="col-sm-8">@Model.Product.BasePrice.ToString("N0") جنيه</dd>
+            <dt class="col-sm-4">السعر بعد الخصم</dt>
+            <dd class="col-sm-8">@Model.FinalPrice.ToString("N0") جنيه</dd>
+            <dt class="col-sm-4">التوفر</dt>
+            <dd class="col-sm-8">@(inStock ? "متاح" : "نفذ المخزون")</dd>
+            <dt class="col-sm-4">الموسم</dt>
+            <dd class="col-sm-8">@seasonLabel</dd>
+            <dt class="col-sm-4">الفئة</dt>
+            <dd class="col-sm-8">@Model.Product.Category?.Name</dd>
+            <dt class="col-sm-4">التقييمات</dt>
+            <dd class="col-sm-8">@Model.Reviews.Count</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RELATED PRODUCTS ===== -->
+  @if (Model.RelatedProducts.Any())
+  {
+    <div class="mt-5 pt-5 border-top" style="border-color:var(--border-color)!important;">
+      <div class="mb-3">
+        <small class="text-uppercase" style="letter-spacing:0.24em;color:var(--muted-foreground);">YOU MAY ALSO LIKE</small>
+        <h3 class="fw-bold mt-2" style="color:var(--foreground);">منتجات مشابهة</h3>
+      </div>
+      <div class="row g-3">
+        @foreach (var rp in Model.RelatedProducts)
+        {
+          <div class="col-6 col-md-3">
+            @await Html.PartialAsync("_ProductCard", rp)
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="mt-5">
+@await Html.PartialAsync("_RecentlyViewedCards", new List<TellaStore.Models.ViewModels.Products.ProductCardViewModel>())
+  </div>
+</div>
+
+@section Scripts {
+<script>
+addToRecentlyViewed(@Model.Product.Id);
+document.addEventListener('DOMContentLoaded', () => loadRecentlyViewed(@Model.Product.Id));
+
+const variants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+  Model.Variants.Select(v => new {
+    id = v.Id, color = v.Color, colorHex = v.ColorHex,
+    size = v.Size, stock = v.Stock, priceModifier = v.PriceModifier
+  })
+));
+
+let selectedVariantId = null;
+let qty = 1;
+
+function switchImage(url, el) {
+  const mainImage = document.getElementById('main-image');
+  mainImage.style.opacity = '0';
+  setTimeout(() => {
+    mainImage.src = url;
+    mainImage.style.opacity = '1';
+  }, 180);
+  document.querySelectorAll('.img-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openLightbox() {
+  const url = document.getElementById('main-image').src;
+  if (url) {
+    window.open(url, '_blank');
+  }
+}
+
+function selectColor(color, hex) {
+  selectedVariantId = null;
+  document.getElementById('selected-color-label').textContent = color;
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('selected', s.dataset.color === color);
+  });
+  const sizes = variants.filter(v => v.color === color);
+  const container = document.getElementById('size-buttons');
+  container.innerHTML = '';
+  sizes.forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'size-btn' + (v.stock === 0 ? ' disabled' : '');
+    btn.textContent = v.size + (v.stock === 0 ? ' (نفذ)' : '');
+    if (v.stock > 0) btn.onclick = () => selectVariant(v.id, v.stock, btn);
+    container.appendChild(btn);
+  });
+  document.getElementById('stock-info').textContent = '';
+  document.getElementById('add-to-cart-btn').disabled = true;
+  document.getElementById('add-to-cart-btn').dataset.variantId = '';
+}
+
+function selectVariant(id, stock, btn) {
+  selectedVariantId = id;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('stock-info').textContent = 'المتاح: ' + stock + ' قطعة';
+  document.getElementById('add-to-cart-btn').disabled = false;
+  document.getElementById('add-to-cart-btn').dataset.variantId = id;
+  const qtyInput = document.getElementById('qty-input');
+  qtyInput.max = stock;
+  if (parseInt(qtyInput.value) > stock) qtyInput.value = stock;
+}
+
+async function addToCart() {
+  if (!selectedVariantId) return;
+  const btn = document.getElementById('add-to-cart-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جاري الإضافة...';
+  const qEl = document.getElementById('qty-input');
+  qty = parseInt(qEl?.value || '1');
+  await addToCartAjax(selectedVariantId, qty);
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-bag-plus me-2"></i>أضف للسلة';
+}
+
+function changeQty(delta) {
+  const el = document.getElementById('qty-input');
+  if (!el) return;
+  let val = parseInt(el.value || '1') + delta;
+  const min = parseInt(el.min || '1');
+  const max = parseInt(el.max || '99');
+  if (isNaN(val) || val < min) val = min;
+  if (val > max) val = max;
+  el.value = val;
+  qty = val;
+}
+</script>
+}

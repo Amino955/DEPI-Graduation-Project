@@ -1,0 +1,178 @@
+@using TellaStore.Models.ViewModels.Products
+@model List<TellaStore.Models.ViewModels.Products.ProductCardViewModel>
+<style>
+  .recently-viewed-section {
+    background: var(--background-secondary);
+    padding: 2rem 0;
+    border-top: 1px solid var(--border-color);
+  }
+  .recently-viewed-label {
+    color: var(--muted-foreground);
+    letter-spacing: 0.16em;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+  .recently-viewed-title {
+    color: var(--foreground);
+    font-size: 1.55rem;
+    font-weight: 800;
+    margin: 0;
+  }
+  .recently-viewed-frame {
+    position: relative;
+  }
+  .recently-viewed-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 0.25rem;
+  }
+  .recently-viewed-container::-webkit-scrollbar {
+    height: 6px;
+  }
+  .recently-viewed-container::-webkit-scrollbar-thumb {
+    background: rgba(156,163,175,0.35);
+    border-radius: 999px;
+  }
+  .recently-mini-card {
+    flex: 0 0 auto;
+    width: 140px;
+    max-width: 140px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .recently-mini-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+  .recently-mini-image {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background-size: cover;
+    background-position: center;
+  }
+  .recently-mini-body {
+    padding: 0.9rem 0.85rem 1rem;
+  }
+  .recently-mini-name {
+    color: var(--foreground);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.7rem;
+  }
+  .recently-mini-price {
+    color: var(--theme-accent);
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-top: 0.5rem;
+  }
+  .recently-scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: var(--shadow-sm);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    z-index: 2;
+  }
+  .recently-scroll-btn:hover {
+    background: var(--background-secondary);
+    transform: translateY(-50%) scale(1.02);
+  }
+  .recently-scroll-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .recently-scroll-left {
+    left: -0.5rem;
+  }
+  .recently-scroll-right {
+    right: -0.5rem;
+  }
+</style>
+
+<section id="recently-viewed-section" class="recently-viewed-section" aria-labelledby="recently-viewed-title">
+  <div class="container">
+    <div class="d-flex flex-column gap-2 mb-4">
+      <span class="recently-viewed-label">RECENTLY VIEWED</span>
+      <h2 id="recently-viewed-title" class="recently-viewed-title">شاهدت مؤخراً</h2>
+    </div>
+
+    <div class="recently-viewed-frame">
+      @if (Model.Count > 4)
+      {
+        <button type="button" class="recently-scroll-btn recently-scroll-left" aria-label="Scroll left">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+      }
+
+      <div id="recently-viewed-container" class="recently-viewed-container">
+        @foreach (var p in Model)
+        {
+          var imageUrl = p.MainImageUrl ?? "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&q=80&auto=format&fit=crop";
+          <a asp-controller="Products" asp-action="Details" asp-route-slug="@p.Slug" class="recently-mini-card">
+            <div class="recently-mini-image" style="background-image:url('@imageUrl');"></div>
+            <div class="recently-mini-body">
+              <div class="recently-mini-name">@p.Name</div>
+              <div class="recently-mini-price">@p.FinalPrice.ToString("N0") جنيه</div>
+            </div>
+          </a>
+        }
+      </div>
+
+      @if (Model.Count > 4)
+      {
+        <button type="button" class="recently-scroll-btn recently-scroll-right" aria-label="Scroll right">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  const section = document.getElementById('recently-viewed-section');
+  if (!section) return;
+
+  const container = section.querySelector('#recently-viewed-container');
+  const left = section.querySelector('.recently-scroll-left');
+  const right = section.querySelector('.recently-scroll-right');
+  if (!container) return;
+
+  const updateButtons = () => {
+    if (!left || !right) return;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    left.disabled = container.scrollLeft <= 10;
+    right.disabled = container.scrollLeft >= maxScroll - 10;
+  };
+
+  if (left) {
+    left.addEventListener('click', () => container.scrollBy({ left: -280, behavior: 'smooth' }));
+  }
+  if (right) {
+    right.addEventListener('click', () => container.scrollBy({ left: 280, behavior: 'smooth' }));
+  }
+
+  container.addEventListener('scroll', updateButtons);
+  updateButtons();
+})();
+</script>

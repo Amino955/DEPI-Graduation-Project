@@ -1,0 +1,387 @@
+@model Order
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "الطلب #" + Model.Id;
+  var canCancel = Model.Status == OrderStatus.Pending || Model.Status == OrderStatus.Confirmed;
+}
+
+<style>
+  .premium-details-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .page-order-details {
+    direction: rtl;
+  }
+  .page-order-details .breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: var(--muted-foreground);
+    margin: 0 0.5rem;
+  }
+  .page-order-details .breadcrumb a {
+    color: var(--muted-foreground);
+    text-decoration: none;
+  }
+  .page-order-details .breadcrumb .active {
+    color: var(--foreground);
+    font-weight: 700;
+  }
+  .order-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .order-meta {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+  }
+  .order-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 9999px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .status-Pending { background: var(--warning-bg); color: var(--warning); }
+  .status-Confirmed { background: #EFF6FF; color: #2563EB; }
+  .status-Processing { background: #EFF6FF; color: #2563EB; }
+  .status-Shipped { background: #F5F3FF; color: #7C3AED; }
+  .status-Delivered { background: var(--success-bg); color: var(--success); }
+  .status-Cancelled, .status-FailedDelivery { background: var(--danger-bg); color: var(--danger); }
+  .status-stepper {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    background: var(--card-background);
+    margin-bottom: 1.5rem;
+  }
+  .status-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 0.5rem;
+    border-radius: var(--radius-lg);
+    flex: 1;
+    min-width: 110px;
+    text-align: center;
+    color: var(--muted-foreground);
+    background: var(--background-secondary);
+    border: 1px solid transparent;
+  }
+  .status-step.completed,
+  .status-step.current {
+    color: var(--theme-accent);
+    background: rgba(var(--theme-accent-rgb), 0.08);
+    border-color: var(--theme-accent);
+  }
+  .status-step.current {
+    box-shadow: 0 0 0 4px rgba(var(--theme-accent-rgb), 0.12);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .status-circle {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    font-size: 1.1rem;
+  }
+  .status-step.completed .status-circle,
+  .status-step.current .status-circle {
+    background: var(--theme-accent);
+    color: #fff;
+    border-color: var(--theme-accent);
+  }
+  .status-label {
+    font-weight: 700;
+  }
+  .step-text {
+    font-size: 0.88rem;
+  }
+  @@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+  .order-item-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius-xl);
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+  }
+  .item-thumb {
+    width: 60px;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+  }
+  .item-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .item-name {
+    color: var(--foreground);
+    font-weight: 700;
+    margin-bottom: 0.45rem;
+  }
+  .item-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+  }
+  .item-badge {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 0.35rem 0.9rem;
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+  }
+  .item-meta {
+    display: flex;
+    gap: 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.88rem;
+    flex-wrap: wrap;
+  }
+  .item-total {
+    color: var(--foreground);
+    font-weight: 700;
+    min-width: 90px;
+    text-align: left;
+  }
+  .summary-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--muted-foreground);
+  }
+  .summary-row.total {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--theme-accent);
+    border-bottom: none;
+    padding-top: 1rem;
+  }
+  .address-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .address-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: var(--foreground);
+  }
+  .address-text {
+    color: var(--muted-foreground);
+    line-height: 1.8;
+  }
+  .cancel-button {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-xl);
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--danger);
+    background: transparent;
+    color: var(--danger);
+    font-weight: 700;
+    text-align: center;
+  }
+  @@media (max-width: 991.98px) {
+    .order-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+  @@media (max-width: 767.98px) {
+    .status-stepper {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div class="container py-4 page-order-details">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">الرئيسية</a></li>
+      <li class="breadcrumb-item"><a asp-controller="Orders" asp-action="MyOrders">طلباتي</a></li>
+      <li class="breadcrumb-item active" aria-current="page">الطلب #@Model.Id</li>
+    </ol>
+  </nav>
+
+  <div class="order-header">
+    <div>
+      <h1 class="h4 fw-bold mb-1" style="color: var(--foreground)">تفاصيل الطلب #@Model.Id</h1>
+      <div class="order-meta">تم الإنشاء في @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+    </div>
+    @{var statusLabel = Model.Status switch {
+    OrderStatus.Pending => "قيد الانتظار",
+    OrderStatus.Confirmed => "تم التأكيد",
+    OrderStatus.Processing => "قيد التجهيز",
+    OrderStatus.Shipped => "في الطريق",
+    OrderStatus.Delivered => "تم التسليم",
+    OrderStatus.Cancelled => "ملغي",
+    OrderStatus.FailedDelivery => "فشل التسليم",
+    _ => "غير معروف"
+};}
+<span class="order-status-badge status-@Model.Status">@statusLabel</span>
+  </div>
+
+  @if (Model.Status == OrderStatus.Cancelled || Model.Status == OrderStatus.FailedDelivery)
+  {
+    <div class="status-stepper" style="justify-content: center;">
+      <div class="status-step completed current" style="border-color: var(--danger); background: var(--danger-bg); box-shadow: 0 0 0 4px rgba(220,53,69,0.12); flex: 0 1 300px;">
+        <div class="status-circle" style="background: var(--danger); border-color: var(--danger); color: #fff;"><i class="bi bi-x-circle"></i></div>
+        <div class="status-label" style="color: var(--danger);">@(Model.Status == OrderStatus.Cancelled ? "تم الإلغاء" : "فشل التسليم")</div>
+        <div class="step-text" style="color: var(--danger);">الطلب غير مكتمل</div>
+      </div>
+    </div>
+  }
+  else
+  {
+    <div class="status-stepper">
+      @{ var currentStep = Model.Status switch {
+            OrderStatus.Pending => 1,
+            OrderStatus.Confirmed => 2,
+            OrderStatus.Processing => 2,
+            OrderStatus.Shipped => 3,
+            OrderStatus.Delivered => 4,
+            _ => 0
+          };
+      }
+      @foreach (var step in new[] {
+        new { Index = 1, Label = "تم الطلب", Icon = "bi-bag" },
+        new { Index = 2, Label = "تم التأكيد", Icon = "bi-check2-circle" },
+        new { Index = 3, Label = "قيد التوصيل", Icon = "bi-truck" },
+        new { Index = 4, Label = "تم التسليم", Icon = "bi-house-heart" }
+      })
+      {
+        var completed = step.Index <= currentStep && currentStep > 0;
+        var current = step.Index == currentStep && currentStep > 0;
+        <div class="status-step @(completed ? "completed" : "") @(current ? "current" : "")">
+          <div class="status-circle"><i class="bi @step.Icon"></i></div>
+          <div class="status-label">@step.Label</div>
+          <div class="step-text">@(step.Index < currentStep ? "مكتمل" : step.Index == currentStep ? "الحالي" : "قادم")</div>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="premium-details-card">
+        <h5 class="fw-bold mb-3" style="color: var(--foreground)">عناصر الطلب (@Model.Items.Count)</h5>
+        @foreach (var item in Model.Items)
+        {
+          <div class="order-item-card">
+            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=200&q=80&auto=format&fit=crop" : item.ImageUrl)" alt="@item.ProductName" class="item-thumb" />
+            <div class="item-details">
+              <div class="item-name">@item.ProductName</div>
+              <div class="item-badges">
+                <span class="item-badge">الحجم: @item.Size</span>
+                <span class="item-badge">اللون: @item.Color</span>
+              </div>
+              <div class="item-meta">
+                <span>الكمية: @item.Quantity</span>
+                <span>سعر الوحدة: @item.UnitPrice.ToString("N0") ج</span>
+              </div>
+            </div>
+            <div class="item-total">@item.TotalPrice.ToString("N0") ج</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="summary-card">
+        <h6 class="fw-bold mb-3" style="color: var(--foreground)">ملخص الطلب</h6>
+        <div class="summary-row">
+          <span>المجموع الفرعي</span>
+          <span>@Model.SubTotal.ToString("N0") جنيه</span>
+        </div>
+        <div class="summary-row">
+          <span>رسوم التوصيل</span>
+          <span>مجاني</span>
+        </div>
+        @if (Model.DiscountAmount > 0)
+        {
+          <div class="summary-row" style="color: var(--success)">
+            <span>الخصم</span>
+            <span class="fw-bold">− @Model.DiscountAmount.ToString("N0") جنيه</span>
+          </div>
+        }
+        <div class="summary-row total">
+          <span>الإجمالي</span>
+          <span>@Model.Total.ToString("N0") جنيه</span>
+        </div>
+      </div>
+
+      <div class="address-card">
+        <div class="address-title"><i class="bi bi-geo-alt"></i>عنوان التوصيل</div>
+        <div class="address-text">
+          <p class="mb-1">@Model.ShippingStreet</p>
+          <p class="mb-1">@Model.ShippingCity، @Model.ShippingGovernorate</p>
+          @if (!string.IsNullOrEmpty(Model.CustomerPhone))
+          {
+            <p class="mb-0">@Model.CustomerPhone</p>
+          }
+        </div>
+      </div>
+
+      @if (canCancel)
+      {
+        <div class="address-card">
+          <form method="post" asp-action="Cancel" asp-route-id="@Model.Id" onsubmit="return confirmCancel();">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="cancel-button">
+              <i class="bi bi-x-circle me-1"></i>إلغاء الطلب
+            </button>
+          </form>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  function confirmCancel() {
+    return confirm('هل أنت متأكد من إلغاء هذا الطلب؟');
+  }
+</script>
+}

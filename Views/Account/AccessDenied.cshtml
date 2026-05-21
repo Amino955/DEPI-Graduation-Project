@@ -1,0 +1,222 @@
+﻿@{
+  Layout = "_Layout";
+  ViewData["Title"] = "غير مصرح";
+}
+
+<style>
+  /* Page Container */
+  .access-denied-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 2rem 1rem;
+    background: var(--background);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background Pattern */
+  .access-denied-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(var(--theme-accent-rgb), 0.03) 10px,
+      rgba(var(--theme-accent-rgb), 0.03) 20px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Content Wrapper */
+  .access-denied-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  /* Card */
+  .access-denied-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 3.5rem 2rem;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+
+  /* Icon */
+  .access-denied-icon {
+    font-size: 5rem;
+    color: var(--danger);
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @@keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  }
+
+  /* Status Code */
+  .status-code {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--danger);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.05em;
+  }
+
+  /* Heading */
+  .access-denied-heading {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2.2rem);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  /* Subtitle */
+  .access-denied-subtitle {
+    color: var(--muted-foreground);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+  }
+
+  /* Button Group */
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  @@media (max-width: 480px) {
+    .button-group {
+      flex-direction: column;
+    }
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.9rem 2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity var(--transition);
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  /* Outline Button */
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition);
+    cursor: pointer;
+  }
+
+  .btn-outline:hover {
+    background: var(--background);
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+  }
+
+  /* Additional Info */
+  .access-denied-info {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+  }
+
+  .info-link {
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 700;
+    transition: opacity var(--transition);
+  }
+
+  .info-link:hover {
+    opacity: 0.8;
+  }
+</style>
+
+<div class="access-denied-container">
+  <div class="access-denied-wrapper">
+    <!-- Card -->
+    <div class="access-denied-card">
+      <!-- Icon with Animation -->
+      <div class="access-denied-icon">
+        <i class="bi bi-shield-x"></i>
+      </div>
+
+      <!-- Status Code -->
+      <div class="status-code">403</div>
+
+      <!-- Heading -->
+      <h1 class="access-denied-heading">غير مصرح</h1>
+
+      <!-- Subtitle -->
+      <p class="access-denied-subtitle">
+        ليس لديك صلاحية للوصول إلى هذه الصفحة. يرجى التأكد من أن لديك الصلاحيات اللازمة.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="button-group">
+        <a href="/" class="btn-primary">
+          <i class="bi bi-house"></i>
+          العودة للرئيسية
+        </a>
+        <a asp-action="Login" asp-controller="Account" class="btn-outline">
+          <i class="bi bi-lock"></i>
+          تسجيل الدخول
+        </a>
+      </div>
+
+      <!-- Additional Info -->
+      <div class="access-denied-info">
+        <p style="margin: 0 0 0.5rem 0;">
+          إذا كنت تعتقد أن هذا خطأ، يرجى
+          <a href="/contact" class="info-link">الاتصال بنا</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

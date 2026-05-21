@@ -1,0 +1,474 @@
+@model ProfileViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "حسابي";
+}
+
+<style>
+  .profile-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    margin: 3rem 0;
+  }
+
+  @@media (max-width: 768px) {
+    .profile-container {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Sidebar */
+  .profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .avatar-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .avatar-circle {
+    background: var(--theme-accent);
+    color: #fff;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    font-size: 2.2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(var(--theme-accent-rgb), 0.2);
+    margin: 0 auto 1rem;
+  }
+
+  .avatar-name {
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .avatar-email {
+    color: var(--muted-foreground);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    word-break: break-all;
+  }
+
+  .avatar-member-date {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .avatar-member-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Quick Stats */
+  .stats-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stats-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-item {
+    background: linear-gradient(135deg, rgba(var(--theme-accent-rgb), 0.08), rgba(var(--theme-accent-rgb), 0.02));
+    border: 1px solid rgba(var(--theme-accent-rgb), 0.1);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+  }
+
+  .stat-number {
+    font-weight: 800;
+    color: var(--theme-accent);
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Quick Links */
+  .quick-links-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .quick-link-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border-color);
+    transition: all var(--transition);
+  }
+
+  .quick-link-item:last-child {
+    border-bottom: none;
+  }
+
+  .quick-link-item:hover {
+    background: var(--background);
+    padding-right: 1.25rem;
+  }
+
+  .quick-link-icon {
+    font-size: 1.1rem;
+    color: var(--theme-accent);
+    min-width: 24px;
+  }
+
+  .quick-link-text {
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex: 1;
+  }
+
+  .quick-link-arrow {
+    color: var(--muted-foreground);
+    font-size: 0.85rem;
+    transition: color var(--transition);
+  }
+
+  .quick-link-item:hover .quick-link-arrow {
+    color: var(--theme-accent);
+  }
+
+  /* Main Content */
+  .profile-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1.05rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .card-header i {
+    color: var(--theme-accent);
+    font-size: 1.2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--foreground);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    transition: all var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  .form-control:disabled {
+    background: var(--background-secondary);
+    color: var(--muted-foreground);
+    cursor: not-allowed;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @@media (max-width: 640px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .button-group {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .save-btn {
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .save-btn:hover {
+    opacity: 0.9;
+  }
+
+  .security-link {
+    background: none;
+    border: none;
+    color: var(--theme-accent);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 0;
+    width: 100%;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    transition: all var(--transition);
+  }
+
+  .security-link:hover {
+    opacity: 0.8;
+  }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  .success-message {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+</style>
+
+<div class="container" style="padding: 0 1rem;">
+  <div class="profile-container">
+    <!-- Left Sidebar -->
+    <aside class="profile-sidebar">
+      <!-- Avatar Card -->
+      <div class="avatar-card">
+        <div class="avatar-circle">
+          @((Model.FirstName ?? "?").Substring(0, 1).ToUpper())
+        </div>
+        <div class="avatar-name">@Model.FirstName @Model.LastName</div>
+        <div class="avatar-email">@Model.Email</div>
+        <div class="avatar-member-date">
+          <span class="avatar-member-label">عضو منذ</span>
+          <span>@Model.CreatedAt.ToString("MMM yyyy")</span>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-card">
+        <div class="stats-container">
+          <div class="stat-item">
+            <div class="stat-number">@Model.OrdersCount</div>
+            <div class="stat-label">طلبات</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">@Model.WishlistCount</div>
+            <div class="stat-label">مفضلة</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">@Model.AddressesCount</div>
+            <div class="stat-label">عناوين</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">0</div>
+            <div class="stat-label">رسائل</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="quick-links-card">
+        <a href="/orders/myorders" class="quick-link-item">
+          <i class="bi bi-bag-check quick-link-icon"></i>
+          <span class="quick-link-text">طلباتي</span>
+          <i class="bi bi-chevron-left quick-link-arrow"></i>
+        </a>
+        <a href="/wishlist" class="quick-link-item">
+          <i class="bi bi-heart quick-link-icon"></i>
+          <span class="quick-link-text">المفضلة</span>
+          <i class="bi bi-chevron-left quick-link-arrow"></i>
+        </a>
+        <a href="/account/addresses" class="quick-link-item">
+          <i class="bi bi-geo-alt quick-link-icon"></i>
+          <span class="quick-link-text">عناويني</span>
+          <i class="bi bi-chevron-left quick-link-arrow"></i>
+        </a>
+        <a href="/notifications" class="quick-link-item">
+          <i class="bi bi-bell quick-link-icon"></i>
+          <span class="quick-link-text">الإشعارات</span>
+          <i class="bi bi-chevron-left quick-link-arrow"></i>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Right Main Content -->
+    <div class="profile-main">
+      <!-- Profile Info Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <i class="bi bi-person"></i>
+          بياناتي الشخصية
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+          <div class="success-message">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+          </div>
+        }
+
+        <form method="post" asp-action="Profile">
+          @Html.AntiForgeryToken()
+
+          <div class="form-grid">
+            <!-- First Name -->
+            <div class="form-group">
+              <label asp-for="FirstName" class="form-label">الاسم الأول</label>
+              <input asp-for="FirstName" 
+                     class="form-control"
+                     placeholder="محمد">
+              <span asp-validation-for="FirstName" class="validation-error"></span>
+            </div>
+
+            <!-- Last Name -->
+            <div class="form-group">
+              <label asp-for="LastName" class="form-label">الاسم الأخير</label>
+              <input asp-for="LastName" 
+                     class="form-control"
+                     placeholder="أحمد">
+              <span asp-validation-for="LastName" class="validation-error"></span>
+            </div>
+          </div>
+
+          <!-- Email (Disabled) -->
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" 
+                   class="form-control"
+                   value="@Model.Email"
+                   disabled>
+            <span style="color: var(--muted-foreground); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+              <i class="bi bi-info-circle"></i> البريد الإلكتروني لا يمكن تغييره
+            </span>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label asp-for="PhoneNumber" class="form-label">رقم الهاتف</label>
+            <input asp-for="PhoneNumber"
+                   type="tel"
+                   class="form-control"
+                   placeholder="+20 100 123 4567"
+                   dir="ltr">
+            <span asp-validation-for="PhoneNumber" class="validation-error"></span>
+          </div>
+
+          <!-- Save Button -->
+          <div class="button-group">
+            <button type="submit" class="save-btn">
+              <i class="bi bi-check2"></i>
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Account Security Card -->
+      <div class="form-card">
+        <div class="card-header">
+          <i class="bi bi-shield-lock"></i>
+          أمان الحساب
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <p style="color: var(--muted-foreground); font-size: 0.9rem; margin-bottom: 1rem;">
+            حافظ على أمان حسابك بتحديث كلمة المرور بشكل دوري.
+          </p>
+          <a asp-controller="Account" asp-action="ChangePassword" class="security-link">
+            تغيير كلمة المرور
+            <i class="bi bi-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

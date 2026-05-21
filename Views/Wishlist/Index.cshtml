@@ -1,0 +1,283 @@
+﻿@model List<TellaStore.Models.ViewModels.Products.ProductCardViewModel>
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "المفضلة";
+}
+
+<style>
+  /* Page Header Section */
+  .wishlist-header {
+    margin-bottom: 2.5rem;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb-nav {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    color: var(--muted-foreground);
+  }
+
+  .breadcrumb-item {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+
+  .breadcrumb-item:hover {
+    color: var(--theme-accent);
+  }
+
+  .breadcrumb-separator {
+    color: var(--muted-foreground);
+  }
+
+  .breadcrumb-current {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  /* Title Section */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .title-left h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    margin: 0;
+  }
+
+  .title-icon {
+    font-size: 1.5rem;
+    color: #E11D48;
+  }
+
+  .item-count {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  /* Clear All Button */
+  .clear-all-btn {
+    background: transparent;
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    border-radius: var(--radius-md);
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .clear-all-btn:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+  }
+
+  /* Sort/Filter Bar */
+  .sort-filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .sort-pill {
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: 9999px;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .sort-pill:hover,
+  .sort-pill.active {
+    background: var(--theme-accent);
+    color: #fff;
+    border-color: var(--theme-accent);
+  }
+
+  /* Product Grid */
+  .wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+
+  @@media (max-width: 1024px) {
+    .wishlist-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+
+  @@media (max-width: 640px) {
+    .wishlist-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 4rem 2rem;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #E11D48;
+    display: block;
+    margin-bottom: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .empty-state-title {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .empty-state-description {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .empty-state-cta {
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.85rem 2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: opacity var(--transition);
+  }
+
+  .empty-state-cta:hover {
+    opacity: 0.9;
+  }
+</style>
+
+<div class="container" style="padding: 2rem 1rem;">
+  <!-- Page Header Section -->
+  <div class="wishlist-header">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav">
+      <a href="/" class="breadcrumb-item">الرئيسية</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">المفضلة</span>
+    </div>
+
+    <!-- Title Bar -->
+    <div class="title-bar">
+      <div class="title-left">
+        <i class="bi bi-heart title-icon"></i>
+        <div>
+          <h1>المفضلة</h1>
+          <div class="item-count">@Model.Count منتج</div>
+        </div>
+      </div>
+      @if (Model.Any())
+      {
+<form id="clearWishlistForm" method="post" asp-controller="Wishlist" asp-action="Clear" style="display:inline">
+    @Html.AntiForgeryToken()
+    <button type="button" class="clear-all-btn" onclick="clearWishlist()">
+        <i class="bi bi-trash3"></i>
+        مسح الكل
+    </button>
+</form>
+      }
+    </div>
+  </div>
+
+  @if (!Model.Any())
+  {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <i class="bi bi-heart-break empty-state-icon"></i>
+      <h2 class="empty-state-title">قائمتك فارغة</h2>
+      <p class="empty-state-description">
+        احفظ المنتجات التي تحبها هنا لتتذكرها بسهولة والعودة إليها لاحقاً
+      </p>
+      <a href="/products" class="empty-state-cta">
+        <i class="bi bi-bag-plus"></i>
+        تصفح المنتجات
+      </a>
+    </div>
+  }
+  else
+  {
+    <!-- Sort/Filter Bar -->
+    <div class="sort-filter-bar">
+      <a href="#" class="sort-pill active">
+        <i class="bi bi-arrow-down"></i>
+        الأحدث
+      </a>
+      <a href="#" class="sort-pill">
+        <i class="bi bi-sort-up"></i>
+        السعر: الأقل
+      </a>
+      <a href="#" class="sort-pill">
+        <i class="bi bi-sort-down"></i>
+        السعر: الأعلى
+      </a>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="wishlist-grid">
+      @foreach (var p in Model)
+      {
+        @await Html.PartialAsync("_ProductCard", p)
+      }
+    </div>
+  }
+</div>
+
+<script>
+function clearWishlist() {
+    if (confirm('هل تريد بالفعل مسح جميع المنتجات من المفضلة؟')) {
+        document.getElementById('clearWishlistForm').submit();
+    }
+}
+</script>

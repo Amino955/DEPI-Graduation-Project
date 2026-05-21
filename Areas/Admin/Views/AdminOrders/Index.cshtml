@@ -1,0 +1,157 @@
+@model IPagedList<TellaStore.Models.Entities.Order>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@{
+    Layout = "_AdminLayout";
+    var statusFilter = Context.Request.Query["status"].ToString();
+    var search = Context.Request.Query["search"].ToString();
+    var from = Context.Request.Query["from"].ToString();
+    var to = Context.Request.Query["to"].ToString();
+}
+
+<style>
+  .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .tabs-row { display:flex; gap:0.5rem; overflow:auto; padding-bottom:0.75rem; margin-bottom:1rem; }
+  .tab-pill { padding:6px 10px; border-radius:999px; background:var(--background); color:var(--muted-foreground); border:1px solid var(--border-color); font-weight:600; white-space:nowrap; }
+  .tab-pill.active { background:var(--card-background); border-color:var(--theme-accent); color:var(--theme-accent); box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+  .search-card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.75rem; margin-bottom:1rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+  .search-card .form-control, .search-card .form-select { background:var(--background); border-color:var(--border-color); color:var(--foreground); }
+  .orders-table { width:100%; border-collapse:collapse; }
+  .orders-table thead { background:var(--background-secondary); }
+  .orders-table th { padding:12px 14px; color:var(--muted-foreground); font-weight:600; border:none; }
+  .orders-table td { padding:12px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); vertical-align:middle; }
+  .orders-table tbody tr:hover { background:var(--background-secondary); }
+  .status-badge { padding:6px 10px; border-radius:999px; font-weight:700; font-size:0.85rem; }
+  .amount { color:var(--theme-accent); font-weight:700; }
+  .order-link { color:var(--theme-accent); font-weight:700; text-decoration:none; }
+  .muted { color:var(--muted-foreground); }
+  .empty-state { text-align:center; padding:2rem; color:var(--muted-foreground); }</style>
+<div class="page-header">
+    <div>
+        <h2 style="margin:0; color:var(--foreground); font-weight:700">إدارة الطلبات <span class="muted" style="font-weight:500;">(@Model.TotalItemCount)</span></h2>
+        <div style="color:var(--muted-foreground); font-size:0.95rem; margin-top:0.25rem;">قائمة الطلبات وإدارتها</div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+        <a class="btn btn-sm btn-outline-secondary" style="border-color:var(--border-color); color:var(--foreground); display:none;" title="تصدير">
+            <i class="bi bi-download"></i>
+        </a>
+        <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Create" class="btn btn-sm" style="background:var(--theme-accent); color:#fff; display:none;">إنشاء طلب</a>
+    </div>
+</div>
+
+<!-- Status Filter Tabs -->
+<div class="tabs-row" role="tablist" aria-label="Order status tabs">
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="" class="tab-pill @(string.IsNullOrEmpty(statusFilter) ? "active" : "")">الكل <span class="muted" style="margin-inline-start:6px;">(@Model.TotalItemCount)</span></a>
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="Pending" class="tab-pill @(statusFilter == "Pending" ? "active" : "")">قيد الانتظار <span class="muted" style="margin-inline-start:6px;">(@(ViewBag.StatusCounts?.Pending ?? 0))</span></a>
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="Confirmed" class="tab-pill @(statusFilter == "Confirmed" ? "active" : "")">تم التأكيد <span class="muted" style="margin-inline-start:6px;">(@(ViewBag.StatusCounts?.Confirmed ?? 0))</span></a>
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="Shipped" class="tab-pill @(statusFilter == "Shipped" ? "active" : "")">في الطريق <span class="muted" style="margin-inline-start:6px;">(@(ViewBag.StatusCounts?.Shipped ?? 0))</span></a>
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="Delivered" class="tab-pill @(statusFilter == "Delivered" ? "active" : "")">تم التسليم <span class="muted" style="margin-inline-start:6px;">(@(ViewBag.StatusCounts?.Delivered ?? 0))</span></a>
+    <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" asp-route-status="Cancelled" class="tab-pill @(statusFilter == "Cancelled" ? "active" : "")">ملغية <span class="muted" style="margin-inline-start:6px;">(@(ViewBag.StatusCounts?.Cancelled ?? 0))</span></a>
+</div>
+
+<!-- Search & Date Filters -->
+<div class="search-card">
+    <form method="get" class="d-flex align-items-center w-100" style="gap:0.5rem; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+            <div class="input-group">
+                <span class="input-group-text" style="background:var(--background); border:1px solid var(--border-color); color:var(--muted foreground);">
+                <i class="bi bi-search"></i>
+                </span>
+                <input type="text" name="search" value="@search" class="form-control" placeholder="بحث برقم الطلب أو اسم العميل..." />
+            </div>
+        </div>
+        <div style="min-width:150px;">
+            <input type="date" name="from" value="@from" class="form-control" />
+        </div>
+        <div style="min-width:150px;">
+            <input type="date" name="to" value="@to" class="form-control" />
+        </div>
+        <input type="hidden" name="status" value="@statusFilter" />
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button type="submit" class="btn btn-sm" style="background:var(--theme-accent); color:#fff;">تطبيق</button>
+            <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" class="btn btn-sm btn-outline-secondary">إعادة</a>
+        </div>
+    </form>
+</div>
+
+<!-- Orders Table -->
+<div class="card" style="background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.5rem;">
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table orders-table mb-0">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>الهاتف</th>
+                        <th>العناصر</th>
+                        <th>المبلغ</th>
+                        <th>الحالة</th>
+                        <th>التاريخ</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td style="width:110px;"><a asp-area="Admin" asp-controller="AdminOrders" asp-action="Details" asp-route-id="@o.Id" class="order-link">#@o.Id</a></td>
+                            <td>
+                                <div style="font-weight:700; color:var(--foreground);">@o.User.FullName</div>
+                                <div class="muted" style="font-size:0.85rem;">@o.User.Email</div>
+                            </td>
+                            <td class="muted">@o.User.PhoneNumber</td>
+                            <td><span class="badge" style="background:var(--background); color:var(--muted-foreground); padding:6px 8px; border-radius:999px;">@o.Items.Count منتج</span></td>
+                            <td class="amount">@o.Total.ToString("C")</td>
+                            <td>
+                                @{
+                                    var badge = o.Status switch
+                                    {
+                                        OrderStatus.Pending => (bg: "#FFFBEB", fg: "#D97706", text: "قيد الانتظار"),
+                                        OrderStatus.Confirmed => (bg: "#EFF6FF", fg: "#2563EB", text: "مؤكد"),
+                                        OrderStatus.Shipped => (bg: "#F5F3FF", fg: "#7C3AED", text: "في الطريق"),
+                                        OrderStatus.Delivered => (bg: "var(--success-bg)", fg: "var(--success)", text: "تم التسليم"),
+                                        OrderStatus.Cancelled => (bg: "var(--danger-bg)", fg: "var(--danger)", text: "ملغى"),
+                                        _ => (bg: "transparent", fg: "var(--muted-foreground)", text: o.Status.ToString())
+                                    };
+                                }
+                                <span class="status-badge" style="background:@badge.bg; color:@badge.fg;">@badge.text</span>
+                            </td>
+                            <td class="muted">@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Details" asp-route-id="@o.Id" class="btn btn-sm" style="border:1px solid var(--theme-accent); color:var(--theme-accent);">عرض التفاصيل</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="bi bi-bag" style="font-size:36px; display:block; margin-bottom:8px; color:var(--muted-foreground);"></i>
+            <div style="font-weight:700; color:var(--foreground);">لا توجد طلبات</div>
+        </div>
+    }
+</div>
+
+<!-- Pagination -->
+@if (Model != null && Model.PageCount > 1)
+{
+    <div class="d-flex justify-content-center mt-3">
+        @Html.PagedListPager(Model, page => Url.Action("Index", "AdminOrders", new { area = "Admin", page, status = statusFilter, search = search, from = from, to = to }),
+            new PagedListRenderOptions
+            {
+                DisplayLinkToFirstPage = PagedListDisplayMode.IfNeeded,
+                DisplayLinkToLastPage = PagedListDisplayMode.IfNeeded,
+                DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                DisplayLinkToNextPage = PagedListDisplayMode.Always,
+                MaximumPageNumbersToDisplay = 5,
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" },
+                ContainerDivClasses = new[] { "pagination" }
+            })
+    </div>
+}

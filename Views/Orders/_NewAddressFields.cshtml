@@ -1,0 +1,200 @@
+@model CheckoutViewModel
+
+<!-- Address Form Card -->
+<div style="
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+">
+  <!-- Form Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    
+    <!-- Street (Full Width) -->
+    <div style="grid-column: 1 / -1;">
+      <label style="
+        display: block;
+        font-weight: 700;
+        color: var(--foreground);
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+      ">
+        الشارع <span style="color: var(--danger);">*</span>
+      </label>
+      <input 
+        asp-for="NewStreet" 
+        placeholder="اسم الشارع ورقم المبنى"
+        style="
+          width: 100%;
+          background: var(--background);
+          border: 1px solid var(--border-color);
+          color: var(--foreground);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem 0.95rem;
+          font-size: 0.95rem;
+          transition: all var(--transition);
+          font-family: var(--font-ar);
+        "
+        onfocus="this.style.borderColor='var(--theme-accent)'; this.style.boxShadow='0 0 0 3px rgba(var(--theme-accent-rgb),0.1)'; this.style.backgroundColor='var(--background)';"
+        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow=''; this.style.backgroundColor='var(--background)';"
+      >
+      <span asp-validation-for="NewStreet" style="color: var(--danger); font-size: 0.8rem; display: block; margin-top: 0.25rem;"></span>
+    </div>
+
+    <!-- City -->
+    <div>
+      <label style="
+        display: block;
+        font-weight: 700;
+        color: var(--foreground);
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+      ">
+        المدينة <span style="color: var(--danger);">*</span>
+      </label>
+      <input 
+        asp-for="NewCity" 
+        placeholder="المدينة"
+        style="
+          width: 100%;
+          background: var(--background);
+          border: 1px solid var(--border-color);
+          color: var(--foreground);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem 0.95rem;
+          font-size: 0.95rem;
+          transition: all var(--transition);
+          font-family: var(--font-ar);
+        "
+        onfocus="this.style.borderColor='var(--theme-accent)'; this.style.boxShadow='0 0 0 3px rgba(var(--theme-accent-rgb),0.1)'; this.style.backgroundColor='var(--background)';"
+        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow=''; this.style.backgroundColor='var(--background)';"
+      >
+      <span asp-validation-for="NewCity" style="color: var(--danger); font-size: 0.8rem; display: block; margin-top: 0.25rem;"></span>
+    </div>
+
+    <!-- Governorate -->
+    <div>
+      <label style="
+        display: block;
+        font-weight: 700;
+        color: var(--foreground);
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+      ">
+        المحافظة <span style="color: var(--danger);">*</span>
+      </label>
+      <input 
+        asp-for="NewGovernorate" 
+        placeholder="المحافظة"
+        style="
+          width: 100%;
+          background: var(--background);
+          border: 1px solid var(--border-color);
+          color: var(--foreground);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem 0.95rem;
+          font-size: 0.95rem;
+          transition: all var(--transition);
+          font-family: var(--font-ar);
+        "
+        onfocus="this.style.borderColor='var(--theme-accent)'; this.style.boxShadow='0 0 0 3px rgba(var(--theme-accent-rgb),0.1)'; this.style.backgroundColor='var(--background)';"
+        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow=''; this.style.backgroundColor='var(--background)';"
+      >
+      <span asp-validation-for="NewGovernorate" style="color: var(--danger); font-size: 0.8rem; display: block; margin-top: 0.25rem;"></span>
+    </div>
+  </div>
+
+  <!-- Checkbox: Save Address (Styled as Toggle) -->
+  <div style="
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(var(--theme-accent-rgb), 0.05);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(var(--theme-accent-rgb), 0.15);
+  ">
+    <input 
+      asp-for="SaveNewAddress" 
+      type="checkbox" 
+      id="saveAddrCheck"
+      style="
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--theme-accent);
+        border-radius: 4px;
+      "
+    >
+    <label 
+      for="saveAddrCheck" 
+      style="
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--foreground);
+        font-size: 0.95rem;
+        margin: 0;
+        flex: 1;
+      "
+    >
+      احفظ هذا العنوان للاستخدام لاحقاً
+    </label>
+  </div>
+
+  <!-- Address Preview Section (Informational) -->
+  <div style="
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--background);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    display: none;
+  " id="addressPreview">
+    <div style="
+      font-size: 0.85rem;
+      color: var(--muted-foreground);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    ">
+      <i class="bi bi-map-pin" style="color: var(--theme-accent);"></i>
+      معاينة العنوان
+    </div>
+    <div id="addressText" style="
+      color: var(--foreground);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      font-family: var(--font-ar);
+    "></div>
+  </div>
+</div>
+
+<script>
+  // Optional: Show address preview as user types
+  document.addEventListener('DOMContentLoaded', function() {
+    const streetInput = document.querySelector('input[asp-for="NewStreet"]') || document.querySelector('[name="NewStreet"]');
+    const cityInput = document.querySelector('input[asp-for="NewCity"]') || document.querySelector('[name="NewCity"]');
+    const governorateInput = document.querySelector('input[asp-for="NewGovernorate"]') || document.querySelector('[name="NewGovernorate"]');
+    
+    function updatePreview() {
+      const street = streetInput?.value || '';
+      const city = cityInput?.value || '';
+      const governorate = governorateInput?.value || '';
+      
+      if (street || city || governorate) {
+        const address = [street, city, governorate].filter(Boolean).join(' • ');
+        document.getElementById('addressText').textContent = address;
+        document.getElementById('addressPreview').style.display = 'block';
+      } else {
+        document.getElementById('addressPreview').style.display = 'none';
+      }
+    }
+    
+    streetInput?.addEventListener('input', updatePreview);
+    cityInput?.addEventListener('input', updatePreview);
+    governorateInput?.addEventListener('input', updatePreview);
+  });
+</script>

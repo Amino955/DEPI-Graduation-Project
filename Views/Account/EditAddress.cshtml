@@ -1,0 +1,291 @@
+﻿@model Address
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "تعديل العنوان";
+}
+
+<style>
+  .edit-address-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 200px);
+    padding: 2rem 1rem;
+  }
+
+  .edit-address-wrapper {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all var(--transition);
+    margin-bottom: 1rem;
+  }
+
+  .back-button:hover {
+    opacity: 0.8;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .page-title h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: 1.8rem;
+    margin: 0;
+  }
+
+  .page-title-icon {
+    font-size: 1.3rem;
+    color: var(--theme-accent);
+  }
+
+  .form-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @@media (max-width: 480px) {
+    .form-group-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--foreground);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    transition: all var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  .checkbox-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(var(--theme-accent-rgb), 0.05);
+    border: 1px solid rgba(var(--theme-accent-rgb), 0.15);
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+  }
+
+  .form-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--theme-accent);
+    border-radius: 4px;
+  }
+
+  .checkbox-label {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--foreground);
+    font-size: 0.95rem;
+    margin: 0;
+    flex: 1;
+  }
+
+  .validation-summary {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .validation-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .submit-btn:hover {
+    opacity: 0.9;
+  }
+
+  .cancel-link {
+    text-align: center;
+    display: block;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color var(--transition);
+  }
+
+  .cancel-link:hover {
+    color: var(--foreground);
+  }
+</style>
+
+<div class="edit-address-container">
+  <div class="edit-address-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+      <a asp-action="Addresses" class="back-button">
+        <i class="bi bi-arrow-right"></i>
+        رجوع إلى العناوين
+      </a>
+      <div class="page-title">
+        <i class="bi bi-geo-alt page-title-icon"></i>
+        <h1>تعديل العنوان</h1>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+      <form method="post" asp-action="EditAddress" asp-route-id="@Model.Id">
+        @Html.AntiForgeryToken()
+
+        <!-- Validation Summary -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+          <div asp-validation-summary="All" class="validation-summary"></div>
+        }
+
+        <!-- Label (Full Width) -->
+        <div class="form-group">
+          <label asp-for="Label" class="form-label">
+            اسم العنوان
+          </label>
+          <input asp-for="Label" 
+                 class="form-control" 
+                 placeholder="مثال: المنزل، العمل"
+                 required>
+          <span asp-validation-for="Label" class="validation-error"></span>
+        </div>
+
+        <!-- Street (Full Width) -->
+        <div class="form-group">
+          <label asp-for="Street" class="form-label">
+            الشارع وتفاصيل العنوان
+          </label>
+          <input asp-for="Street" 
+                 class="form-control" 
+                 placeholder="اسم الشارع، رقم المبنى، الشقة"
+                 required>
+          <span asp-validation-for="Street" class="validation-error"></span>
+        </div>
+
+        <!-- City & Governorate (2-Column Grid) -->
+        <div class="form-group-grid">
+          <div>
+            <label asp-for="City" class="form-label">
+              المدينة
+            </label>
+            <input asp-for="City" 
+                   class="form-control" 
+                   placeholder="القاهرة"
+                   required>
+            <span asp-validation-for="City" class="validation-error"></span>
+          </div>
+          <div>
+            <label asp-for="Governorate" class="form-label">
+              المحافظة
+            </label>
+            <input asp-for="Governorate" 
+                   class="form-control" 
+                   placeholder="القاهرة"
+                   required>
+            <span asp-validation-for="Governorate" class="validation-error"></span>
+          </div>
+        </div>
+
+        <!-- IsDefault Toggle -->
+        <div class="checkbox-toggle-group">
+          <input asp-for="IsDefault" 
+                 type="checkbox" 
+                 class="form-checkbox" 
+                 id="isDefaultEditCheck">
+          <label class="checkbox-label" for="isDefaultEditCheck">
+            تعيين كعنوان افتراضي
+          </label>
+        </div>
+
+        <!-- Save Button -->
+        <button type="submit" class="submit-btn">
+          <i class="bi bi-check2-circle"></i>
+          حفظ التعديلات
+        </button>
+
+        <!-- Cancel Link -->
+        <a asp-action="Addresses" class="cancel-link">إلغاء</a>
+      </form>
+    </div>
+  </div>
+</div>

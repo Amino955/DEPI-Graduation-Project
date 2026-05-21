@@ -1,0 +1,255 @@
+@model List<Notification>
+
+<style>
+  #notification-dropdown .tella-notif {
+    direction: rtl;
+    text-align: right;
+    width: min(420px, calc(100vw - 24px));
+    max-height: 410px;
+    overflow-y: auto;
+    background: var(--card-background);
+  }
+
+  #notification-dropdown .tella-notif-empty {
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+
+  #notification-dropdown .tella-notif-empty-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 0.85rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--theme-accent-rgb), 0.08);
+    color: var(--theme-accent);
+    font-size: 1.45rem;
+  }
+
+  #notification-dropdown .tella-notif-empty-title {
+    color: var(--foreground);
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+  }
+
+  #notification-dropdown .tella-notif-empty-text {
+    color: var(--muted-foreground);
+    font-size: 0.83rem;
+    line-height: 1.6;
+  }
+
+  #notification-dropdown .tella-notif-list {
+    padding: 0.4rem;
+  }
+
+  #notification-dropdown .tella-notif-item {
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 10px;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.85rem;
+    border-radius: 12px;
+    color: var(--foreground) !important;
+    text-decoration: none !important;
+    border: 0 !important;
+    background: transparent;
+  }
+
+  #notification-dropdown .tella-notif-item + .tella-notif-item {
+    margin-top: 0.2rem;
+  }
+
+  #notification-dropdown .tella-notif-item:hover {
+    background: var(--background-secondary);
+  }
+
+  #notification-dropdown .tella-notif-item.is-unread {
+    background: rgba(var(--theme-accent-rgb), 0.07);
+  }
+
+  #notification-dropdown .tella-notif-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  #notification-dropdown .tone-success { background: #DCFCE7; color: #16A34A; }
+  #notification-dropdown .tone-order { background: rgba(37, 99, 235, 0.12); color: #2563EB; }
+  #notification-dropdown .tone-warning { background: #FEF3C7; color: #D97706; }
+  #notification-dropdown .tone-danger { background: #FEE2E2; color: #DC2626; }
+  #notification-dropdown .tone-default { background: var(--background-secondary); color: var(--muted-foreground); }
+
+  #notification-dropdown .tella-notif-body {
+    min-width: 0;
+  }
+
+  #notification-dropdown .tella-notif-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  #notification-dropdown .tella-notif-title {
+    color: var(--foreground);
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  #notification-dropdown .tella-notif-new {
+    flex-shrink: 0;
+    padding: 0.14rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(var(--theme-accent-rgb), 0.1);
+    color: var(--theme-accent);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  #notification-dropdown .tella-notif-message {
+    margin-top: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  #notification-dropdown .tella-notif-bottom {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  #notification-dropdown .tella-notif-time {
+    color: var(--muted-foreground);
+    font-size: 0.73rem;
+    white-space: nowrap;
+  }
+
+  #notification-dropdown .tella-notif-action {
+    color: var(--theme-accent);
+    font-size: 0.74rem;
+    font-weight: 800;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  #notification-dropdown .tella-notif-dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 0.55rem;
+    border-radius: 50%;
+    background: var(--theme-accent);
+    box-shadow: 0 0 0 4px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  #notification-dropdown .tella-notif-footer {
+    min-height: 46px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    color: var(--theme-accent) !important;
+    background: rgba(var(--theme-accent-rgb), 0.04);
+    font-weight: 800;
+    font-size: 0.86rem;
+    text-decoration: none !important;
+  }
+</style>
+
+@if (!Model.Any())
+{
+  <div class="tella-notif">
+    <div class="tella-notif-empty">
+      <div class="tella-notif-empty-icon">
+        <i class="bi bi-bell"></i>
+      </div>
+      <div class="tella-notif-empty-title">لا توجد إشعارات الآن</div>
+      <div class="tella-notif-empty-text">عندما يحدث شيء مهم ستظهر التنبيهات هنا.</div>
+    </div>
+  </div>
+}
+else
+{
+  <div class="tella-notif">
+    <div class="tella-notif-list">
+      @foreach (var n in Model)
+      {
+        var iconClass = n.Type switch {
+          NotificationType.OrderConfirmed => "bi bi-patch-check",
+          NotificationType.OrderShipped => "bi bi-truck",
+          NotificationType.OrderDelivered => "bi bi-bag-check",
+          NotificationType.OrderCancelled => "bi bi-x-octagon",
+          NotificationType.LowStock => "bi bi-exclamation-triangle",
+          NotificationType.NewOrder => "bi bi-bag-heart",
+          _ => "bi bi-bell"
+        };
+        var toneClass = n.Type switch {
+          NotificationType.OrderConfirmed => "tone-success",
+          NotificationType.OrderShipped => "tone-order",
+          NotificationType.OrderDelivered => "tone-success",
+          NotificationType.OrderCancelled => "tone-danger",
+          NotificationType.LowStock => "tone-warning",
+          NotificationType.NewOrder => "tone-order",
+          _ => "tone-default"
+        };
+
+        <a href="@(n.Link ?? "#")"
+           class="tella-notif-item notif-card @(!n.IsRead ? "is-unread unread" : "read")"
+           onclick="markRead(@n.Id)">
+          <span class="tella-notif-icon @toneClass">
+            <i class="@iconClass"></i>
+          </span>
+
+          <span class="tella-notif-body">
+            <span class="tella-notif-top">
+              <span class="tella-notif-title">@n.Title</span>
+              @if (!n.IsRead)
+              {
+                <span class="tella-notif-new">جديد</span>
+              }
+            </span>
+            <span class="tella-notif-message">@n.Message</span>
+            <span class="tella-notif-bottom">
+              <span class="tella-notif-time">@n.CreatedAt.ToString("dd/MM HH:mm")</span>
+              <span class="tella-notif-action">
+                التفاصيل
+                <i class="bi bi-chevron-left"></i>
+              </span>
+            </span>
+          </span>
+
+          @if (!n.IsRead)
+          {
+            <span class="tella-notif-dot"></span>
+          }
+          else
+          {
+            <span></span>
+          }
+        </a>
+      }
+    </div>
+  </div>
+}
+
+<a href="/notifications" class="tella-notif-footer">
+  عرض كل الإشعارات
+  <i class="bi bi-arrow-left-short"></i>
+</a>

@@ -1,0 +1,306 @@
+@model ProductCardViewModel
+@{
+  var mainImage = Model.MainImageUrl ?? "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=700&q=80&auto=format&fit=crop";
+  var isInStock = Model.IsInStock;
+  var discountPct = Model.HasDiscount && Model.BasePrice > 0
+      ? (int)Math.Round((Model.BasePrice - Model.FinalPrice) / Model.BasePrice * 100)
+      : 0;
+}
+
+<style>
+  .product-card {
+    height: 100%;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  }
+
+  .product-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(var(--theme-accent-rgb), 0.28);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.1);
+  }
+
+  .product-card .product-image-wrap {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1.08;
+    overflow: hidden;
+    background: var(--background-secondary);
+  }
+
+  .product-card .product-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.55s ease;
+  }
+
+  .product-card:hover .product-image-wrap img {
+    transform: scale(1.045);
+  }
+
+  .product-card .product-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    padding: 0.35rem 0.55rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: var(--theme-accent);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.14);
+  }
+
+  .product-card .product-badge.out-of-stock {
+    background: #DC2626;
+  }
+
+  .product-card .wishlist-action {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 3;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,0.65);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--foreground);
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(10px);
+    transition: transform var(--transition), color var(--transition), background var(--transition);
+  }
+
+  .product-card .wishlist-action:hover {
+    transform: scale(1.08);
+    background: #fff;
+  }
+
+  .product-card .wishlist-action.active {
+    color: #DC2626;
+  }
+
+  .product-card .product-info {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .product-card .product-name {
+    color: var(--foreground);
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.45;
+    min-height: 2.65rem;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-card .product-name-link {
+    text-decoration: none;
+  }
+
+  .product-card .product-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.55rem;
+    min-height: 18px;
+  }
+
+  .product-card .product-meta i {
+    font-size: 0.72rem;
+    color: #D1D5DB;
+  }
+
+  .product-card .product-meta i.filled {
+    color: #F59E0B;
+  }
+
+  .product-card .product-meta span {
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+    margin-inline-start: 0.15rem;
+  }
+
+  .product-card .product-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .product-card .price-stack {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .product-card .final {
+    color: var(--foreground);
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .product-card .original {
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    text-decoration: line-through;
+  }
+
+  .product-card .discount-pct-badge {
+    color: #DC2626;
+    background: #FEE2E2;
+    padding: 0.14rem 0.42rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .product-card .swatch-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.38rem;
+    margin-top: 0.75rem;
+  }
+
+  .product-card .swatch-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--card-background);
+    outline: 1px solid var(--border-color);
+  }
+
+  .product-card .swatch-dot.black { background: #111827; }
+  .product-card .swatch-dot.white { background: #ffffff; }
+  .product-card .swatch-dot.gray { background: #9CA3AF; }
+
+  .product-card .card-action {
+    min-height: 42px;
+    margin-top: 0.9rem;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 900;
+    transition: background var(--transition), transform var(--transition), color var(--transition);
+  }
+
+  .product-card .card-action.in-stock {
+    background: var(--foreground);
+    color: var(--card-background);
+  }
+
+  .product-card .card-action.in-stock:hover {
+    background: var(--theme-accent);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .product-card .card-action.out-of-stock {
+    background: var(--background-secondary);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border-color);
+    pointer-events: none;
+  }
+
+  @@media (max-width: 575px) {
+    .product-card .product-image-wrap {
+      aspect-ratio: 1 / 1;
+    }
+  }
+</style>
+
+<div class="product-card">
+  <a asp-controller="Products" asp-action="Details" asp-route-slug="@Model.Slug" class="product-image-wrap">
+    <img src="@mainImage" alt="@Model.Name" loading="lazy" />
+
+    @if (!isInStock)
+    {
+      <span class="product-badge out-of-stock">نفذ المخزون</span>
+    }
+    else if (Model.IsFeatured)
+    {
+      <span class="product-badge">مميز</span>
+    }
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+      <button class="wishlist-action @(Model.IsInWishlist ? "active" : "")"
+              type="button"
+              data-product-id="@Model.Id"
+              onclick="event.preventDefault();toggleWishlist(@Model.Id)"
+              aria-label="@(Model.IsInWishlist ? "إزالة من المفضلة" : "إضافة للمفضلة")">
+        <i class="bi @(Model.IsInWishlist ? "bi-heart-fill" : "bi-heart")"></i>
+      </button>
+    }
+  </a>
+
+  <div class="product-info">
+    <a asp-controller="Products" asp-action="Details" asp-route-slug="@Model.Slug" class="product-name-link">
+      <h3 class="product-name">@Model.Name</h3>
+    </a>
+
+    <div class="product-meta">
+      @if (Model.ReviewCount > 0)
+      {
+        @for (int i = 1; i <= 5; i++)
+        {
+          var isFilled = i <= Math.Round(Model.AverageRating);
+          <i class="bi bi-star-fill @(isFilled ? "filled" : "")"></i>
+        }
+        <span>(@Model.ReviewCount)</span>
+      }
+    </div>
+
+    <div class="product-price-row">
+      <div class="price-stack">
+        <span class="final">@Model.FinalPrice.ToString("N0") جنيه</span>
+        @if (Model.HasDiscount)
+        {
+          <span class="original">@Model.BasePrice.ToString("N0")</span>
+        }
+      </div>
+      @if (Model.HasDiscount)
+      {
+        <span class="discount-pct-badge">-@discountPct%</span>
+      }
+    </div>
+
+    <div class="swatch-strip">
+      <span class="swatch-dot black" title="أسود"></span>
+      <span class="swatch-dot white" title="أبيض"></span>
+      <span class="swatch-dot gray" title="رمادي"></span>
+    </div>
+
+    <a asp-controller="Products" asp-action="Details" asp-route-slug="@Model.Slug"
+       class="card-action @(isInStock ? "in-stock" : "out-of-stock")">
+      @(isInStock ? "عرض التفاصيل" : "نفذ المخزون")
+      @if (isInStock)
+      {
+        <i class="bi bi-arrow-left-short"></i>
+      }
+    </a>
+  </div>
+</div>

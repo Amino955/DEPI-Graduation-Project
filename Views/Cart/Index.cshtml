@@ -1,0 +1,265 @@
+@model CartViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "سلة التسوق";
+}
+
+<style>
+  .premium-cart-container {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .premium-cart-row {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    transition: background-color var(--transition);
+  }
+  .premium-cart-row:last-child {
+    border-bottom: none;
+  }
+  .premium-cart-row:hover {
+    background-color: var(--background-secondary);
+  }
+  .premium-cart-img {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+  }
+  .premium-badge-pill {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--muted-foreground);
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    padding: 2px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .premium-qty-control {
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--card-background);
+    display: inline-flex;
+    align-items: center;
+  }
+  .premium-qty-btn {
+    background: none;
+    border: none;
+    color: var(--muted-foreground);
+    width: 32px;
+    height: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .premium-qty-btn:hover {
+    background: var(--background-secondary);
+  }
+  .premium-qty-input {
+    width: 44px;
+    text-align: center;
+    border: none;
+    border-left: 1.5px solid var(--border-color);
+    border-right: 1.5px solid var(--border-color);
+    color: var(--foreground);
+    background: transparent;
+    font-weight: bold;
+  }
+  /* remove input arrow */
+  .premium-qty-input::-webkit-outer-spin-button,
+  .premium-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .premium-qty-input[type=number] {
+    -moz-appearance: textfield;
+  }
+  .premium-summary-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    position: sticky;
+    top: 80px;
+    box-shadow: var(--shadow-md);
+  }
+  .premium-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .premium-summary-row.total {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--foreground);
+    border-bottom: none;
+    padding-top: 1rem;
+  }
+  .premium-cod-badge {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    color: var(--success);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+</style>
+
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: var(--foreground)">
+      <i class="bi bi-bag me-2" style="color:var(--theme-accent)"></i>سلة التسوق
+      @if (Model.ItemCount > 0)
+      {
+        <span class="fs-6 fw-normal ms-2" style="color:var(--muted-foreground)">(@Model.ItemCount منتج)</span>
+      }
+    </h2>
+    @if (Model.Items.Any())
+    {
+      <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="clearCart()">
+        <i class="bi bi-trash3 me-1"></i>تفريغ السلة
+      </button>
+    }
+  </div>
+
+  @if (!Model.Items.Any())
+  {
+    <div class="text-center py-5 my-4">
+      <div class="mx-auto mb-4 d-flex align-items-center justify-content-center"
+           style="width:100px;height:100px;background:var(--background-secondary);border-radius:50%;border:1px solid var(--border-color)">
+        <i class="bi bi-bag-x fs-1" style="color:var(--muted-foreground)"></i>
+      </div>
+      <h4 class="fw-bold" style="color: var(--foreground)">سلتك فارغة</h4>
+      <p style="color:var(--muted-foreground)">لم تضف أي منتجات للسلة بعد</p>
+      <a href="/products" class="btn px-5 mt-2" style="background: var(--theme-accent); color: #fff; border-radius: var(--radius-md); font-weight: 600; padding: 12px 36px">تسوق الآن</a>
+    </div>
+  }
+  else
+  {
+    <div class="row g-4">
+      <!-- Cart Items -->
+      <div class="col-lg-8">
+        <div class="premium-cart-container">
+          @foreach (var item in Model.Items)
+          {
+            <div class="premium-cart-row" data-cart-row="@item.VariantId">
+              <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/no-image.png" : item.ImageUrl)"
+                   class="premium-cart-img" alt="@item.ProductName">
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1" style="color: var(--foreground)">@item.ProductName</h6>
+                <div class="d-flex gap-2 flex-wrap mb-2">
+                  <span class="premium-badge-pill">
+                    <span class="rounded-circle d-inline-block"
+                          style="width:10px;height:10px;background:@item.ColorHex"></span>
+                    @item.Color
+                  </span>
+                  <span class="premium-badge-pill">
+                    @item.Size
+                  </span>
+                </div>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                  <div class="premium-qty-control">
+                    <button type="button" class="premium-qty-btn"
+                            onclick="changeCartQty(@item.VariantId, -1)">−</button>
+                    <input type="number" class="premium-qty-input qty-input" value="@item.Quantity" min="1" max="99"
+                           onchange="updateQuantityAjax(@item.VariantId, parseInt(this.value)||1)"
+                           data-variant-id="@item.VariantId">
+                    <button type="button" class="premium-qty-btn"
+                            onclick="changeCartQty(@item.VariantId, 1)">+</button>
+                  </div>
+                  <button type="button" class="btn btn-sm"
+                          style="color:var(--danger);border:none;background:none;padding:4px 8px;font-weight:600"
+                          onclick="removeFromCartAjax(@item.VariantId)">
+                    <i class="bi bi-trash3 me-1"></i> حذف
+                  </button>
+                </div>
+              </div>
+              <div class="text-end flex-shrink-0">
+                @if (item.UnitPrice != item.FinalPrice)
+                {
+                  <div style="text-decoration: line-through; color: var(--muted-foreground); font-size: 0.85rem">@item.UnitPrice.ToString("N0") ج</div>
+                }
+                <div class="fw-bold" style="color:var(--foreground); font-weight:700" data-item-total="@item.VariantId">
+                  @item.TotalPrice.ToString("N0") جنيه
+                </div>
+                <div style="font-size:0.8rem;color:var(--muted-foreground)">
+                  @item.FinalPrice.ToString("N0") × @item.Quantity
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="mt-3">
+          <a href="/products" class="btn btn-sm" style="background: var(--background-secondary); border: 1px solid var(--border-color); color: var(--foreground); border-radius: var(--radius-sm); font-weight:600; padding: 8px 16px">
+            <i class="bi bi-arrow-right me-1"></i>مواصلة التسوق
+          </a>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="col-lg-4">
+        <div class="premium-summary-card">
+          <h5 class="fw-bold mb-3 pb-2" style="border-bottom:1px solid var(--border-color); color: var(--foreground)">ملخص الطلب</h5>
+
+          <div class="premium-summary-row">
+            <span style="color:var(--muted-foreground)">المجموع الفرعي</span>
+            <span class="fw-bold" id="cart-subtotal" style="color: var(--foreground)">@Model.SubTotal.ToString("N0") جنيه</span>
+          </div>
+          <div class="premium-summary-row" id="discount-row" style="color: var(--success); display: @(Model.DiscountAmount > 0 ? "flex" : "none")">
+            <span><i class="bi bi-tag me-1"></i>الخصم</span>
+            <span class="fw-bold" id="cart-discount">− @Model.DiscountAmount.ToString("N0") جنيه</span>
+          </div>
+          <div class="premium-summary-row total">
+            <span>الإجمالي</span>
+            <span id="cart-total">
+              @Model.Total.ToString("N0") جنيه
+            </span>
+          </div>
+
+          <div class="premium-cod-badge my-3">
+            <i class="bi bi-cash-coin"></i>
+            الدفع عند الاستلام فقط
+          </div>
+
+          <a href="/orders/checkout"
+             class="btn btn-lg w-100 py-3 fw-bold text-white"
+             style="background: var(--theme-accent); border-radius: var(--radius-md)">
+            <i class="bi bi-bag-check me-2"></i>إتمـام الشراء
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+@section Scripts {
+<script>
+function changeCartQty(variantId, delta) {
+    const input = document.querySelector(`.qty-input[data-variant-id="${variantId}"]`);
+    if (!input) return;
+    let val = parseInt(input.value || '1') + delta;
+    const min = parseInt(input.min || '1');
+    const max = parseInt(input.max || '99');
+    if (isNaN(val) || val < min) val = min;
+    if (val > max) val = max;
+    input.value = val;
+    updateQuantityAjax(variantId, val);
+}
+</script>
+}

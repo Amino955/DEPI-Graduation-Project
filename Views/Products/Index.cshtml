@@ -1,0 +1,595 @@
+@model ProductListViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "المنتجات";
+}
+
+<style>
+  .page-header-banner {
+    position: relative;
+  }
+  .page-header-banner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--theme-accent), var(--foreground));
+    opacity: 0.9;
+  }
+  .page-header-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1400&q=80&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+  }
+  .page-header-banner .container {
+    position: relative;
+    z-index: 1;
+  }
+  .filter-sidebar {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+  }
+  .filter-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.65rem;
+    margin-top: 1.25rem;
+  }
+  .filter-group-toggle {
+    width: 100%;
+    text-align: left;
+    color: var(--foreground);
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+  .filter-group-toggle i {
+    color: var(--muted-foreground);
+  }
+  .color-swatch {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform var(--transition), border-color var(--transition);
+  }
+  .color-swatch.active {
+    transform: scale(1.08);
+    border-color: var(--theme-accent) !important;
+  }
+  .size-pill {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    padding: 0.55rem 0.9rem;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: transform var(--transition), background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .size-pill.active {
+    background: var(--theme-accent);
+    color: var(--background);
+    border-color: var(--theme-accent);
+  }
+  @@media (min-width: 992px) {
+    .products-grid.grid-2 .product-card-col {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    .products-grid.grid-4 .product-card-col {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+  .products-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+  }
+  .product-card-col {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .pagination .page-link {
+    color: var(--muted-foreground) !important;
+    border-color: var(--border-color) !important;
+    background-color: var(--card-background) !important;
+    transition: background-color var(--transition), color var(--transition);
+  }
+  .pagination .page-link:hover {
+    background-color: var(--background-secondary) !important;
+    color: var(--foreground) !important;
+  }
+  .pagination .page-item.active .page-link {
+    background-color: var(--theme-accent) !important;
+    border-color: var(--theme-accent) !important;
+    color: var(--background) !important;
+  }
+  .badge-filter {
+    background: var(--card-background);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border-color);
+    font-size: 0.82rem;
+    padding: 0.45rem 0.75rem;
+  }
+  .page-header-banner h1,
+  .page-header-banner .breadcrumb a,
+  .page-header-banner .breadcrumb .active {
+    color: var(--background) !important;
+  }
+</style>
+
+<div class="container py-4">
+  <div class="row g-4">
+    <!-- ===== FILTER SIDEBAR ===== -->
+    <div class="col-lg-3">
+      <button class="btn w-100 mb-3 d-lg-none"
+              type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+              style="background: var(--theme-accent); color: var(--background); border-radius: var(--radius-sm)">
+        <i class="bi bi-funnel me-2"></i>الفلاتر
+      </button>
+
+      <div class="collapse d-lg-block" id="filterCollapse">
+        <div class="filter-sidebar" style="position: sticky; top: 80px;">
+          <form method="get" id="filter-form" asp-controller="Products" asp-action="Index">
+            <div class="mb-4">
+              <div class="input-group">
+                <input type="text" name="SearchTerm" class="form-control"
+                       placeholder="ابحث عن منتج أو ماركة..." value="@Model.Filter.SearchTerm"
+                       style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                <button class="btn" type="submit"
+                        style="background: var(--theme-accent); color: var(--background); border-color: var(--theme-accent);">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <div>
+                <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted-foreground)">الفلاتر</div>
+                <div style="font-size:1.4rem;font-weight:700;color:var(--foreground);margin-top:0.35rem">تنظيم سريع</div>
+              </div>
+              <span id="filterCountBadge" class="badge rounded-pill"
+                    style="background: rgba(var(--theme-accent-rgb),0.12); color: var(--theme-accent); font-weight:700;">
+                0
+              </span>
+            </div>
+
+            <div class="filter-group">
+              <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupCategory">
+                القسم <i class="bi bi-chevron-down"></i>
+              </button>
+              <div class="collapse show mt-3" id="groupCategory">
+                <select name="CategoryId" class="form-select form-select-sm w-100"
+                        onchange="this.form.submit()"
+                        style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                  <option value="">كل الأقسام</option>
+                  @foreach (var cat in Model.Categories.Where(c => c.ParentCategoryId == null))
+                  {
+                    var subs = Model.Categories.Where(c => c.ParentCategoryId == cat.Id).ToList();
+                    if (subs.Any())
+                    {
+                      <option value="@cat.Id" selected="@(Model.Filter.CategoryId == cat.Id)">@cat.Name (الكل)</option>
+                      <optgroup label="── @cat.Name">
+                        @foreach (var sub in subs)
+                        {
+                          <option value="@sub.Id" selected="@(Model.Filter.CategoryId == sub.Id)">@sub.Name</option>
+                        }
+                      </optgroup>
+                    }
+                    else
+                    {
+                      <option value="@cat.Id" selected="@(Model.Filter.CategoryId == cat.Id)">@cat.Name</option>
+                    }
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupSeason">
+                الموسم <i class="bi bi-chevron-down"></i>
+              </button>
+              <div class="collapse show mt-3" id="groupSeason">
+                <select name="Season" class="form-select form-select-sm w-100"
+                        onchange="this.form.submit()"
+                        style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                  <option value="">كل المواسم</option>
+                  @if (Model.Filter.Season == Season.Summer)
+                  {
+                    <option value="0" selected>صيفي</option>
+                  }
+                  else
+                  {
+                    <option value="0">صيفي</option>
+                  }
+                  @if (Model.Filter.Season == Season.Winter)
+                  {
+                    <option value="1" selected>شتوي</option>
+                  }
+                  else
+                  {
+                    <option value="1">شتوي</option>
+                  }
+                  @if (Model.Filter.Season == Season.AllSeason)
+                  {
+                    <option value="2" selected>كل الأوقات</option>
+                  }
+                  else
+                  {
+                    <option value="2">كل الأوقات</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            @if (Model.AvailableColors.Any())
+            {
+              <div class="filter-group">
+                <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupColor">
+                  اللون <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse show mt-3" id="groupColor">
+                  <select name="Color" id="colorSelect" class="d-none">
+                    <option value="">كل الألوان</option>
+                    @foreach (var c in Model.AvailableColors)
+                    {
+                      <option value="@c" selected="@(Model.Filter.Color == c)">@c</option>
+                    }
+                  </select>
+                  <div class="d-flex flex-wrap gap-2">
+                    @foreach (var c in Model.AvailableColors)
+                    {
+                      <button type="button" class="color-swatch @(Model.Filter.Color == c ? "active" : "")"
+                              data-color="@c"
+                              style="background:@c; border: 2px solid @(Model.Filter.Color == c ? "var(--theme-accent)" : "var(--border-color)");">
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (Model.AvailableSizes.Any())
+            {
+              <div class="filter-group">
+                <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupSize">
+                  المقاس <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse show mt-3" id="groupSize">
+                  <select name="Size" id="sizeSelect" class="d-none">
+                    <option value="">كل المقاسات</option>
+                    @foreach (var s in Model.AvailableSizes)
+                    {
+                      <option value="@s" selected="@(Model.Filter.Size == s)">@s</option>
+                    }
+                  </select>
+                  <div class="d-flex flex-wrap gap-2">
+                    @foreach (var s in Model.AvailableSizes)
+                    {
+                      <button type="button" class="size-pill @(Model.Filter.Size == s ? "active" : "")"
+                              data-size="@s">
+                        @s
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="filter-group">
+              <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupPrice">
+                نطاق السعر <i class="bi bi-chevron-down"></i>
+              </button>
+              <div class="collapse show mt-3" id="groupPrice">
+                <div class="row g-2 mb-3">
+                  <div class="col-6">
+                    <label class="form-label" style="color:var(--muted-foreground);font-size:0.82rem">من</label>
+                    <input type="number" name="MinPrice" class="form-control form-control-sm"
+                           placeholder="0" value="@Model.Filter.MinPrice"
+                           min="0"
+                           style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label" style="color:var(--muted-foreground);font-size:0.82rem">إلى</label>
+                    <input type="number" name="MaxPrice" class="form-control form-control-sm"
+                           placeholder="0" value="@Model.Filter.MaxPrice"
+                           min="0"
+                           style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <button class="filter-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#groupSort">
+                الترتيب <i class="bi bi-chevron-down"></i>
+              </button>
+              <div class="collapse show mt-3" id="groupSort">
+                <select name="SortBy" class="form-select form-select-sm w-100"
+                        onchange="this.form.submit()"
+                        style="background: var(--background); color: var(--foreground); border-color: var(--border-color); border-radius: var(--radius-sm);">
+                  @if (Model.Filter.SortBy == "newest")
+                  {
+                    <option value="newest" selected>الأحدث</option>
+                  }
+                  else
+                  {
+                    <option value="newest">الأحدث</option>
+                  }
+                  @if (Model.Filter.SortBy == "price_asc")
+                  {
+                    <option value="price_asc" selected>السعر: من الأقل</option>
+                  }
+                  else
+                  {
+                    <option value="price_asc">السعر: من الأقل</option>
+                  }
+                  @if (Model.Filter.SortBy == "price_desc")
+                  {
+                    <option value="price_desc" selected>السعر: من الأعلى</option>
+                  }
+                  else
+                  {
+                    <option value="price_desc">السعر: من الأعلى</option>
+                  }
+                  @if (Model.Filter.SortBy == "name")
+                  {
+                    <option value="name" selected>الاسم</option>
+                  }
+                  else
+                  {
+                    <option value="name">الاسم</option>
+                  }
+                  @if (Model.Filter.SortBy == "top_rated")
+                  {
+                    <option value="top_rated" selected>الأعلى تقييماً</option>
+                  }
+                  else
+                  {
+                    <option value="top_rated">الأعلى تقييماً</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-sm" style="background: var(--theme-accent); color: var(--background); border-radius: var(--radius-sm);">
+                <i class="bi bi-funnel me-1"></i>تطبيق
+              </button>
+              <a asp-controller="Products" asp-action="Index" class="btn btn-sm" style="background: var(--background-secondary); color: var(--foreground); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                مسح الكل
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PRODUCTS GRID ===== -->
+    <div class="col-lg-9">
+      <div class="page-header-banner rounded-4 mb-4" style="min-height:120px;">
+        <div class="page-header-overlay"></div>
+        <div class="container h-100 d-flex flex-column justify-content-center">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h1 style="color: var(--background); font-size: clamp(1.8rem, 3vw, 2.8rem); font-weight:700; margin-bottom:0.5rem;">جميع المنتجات</h1>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0" style="background: transparent; gap:0.5rem;">
+                  <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color: var(--background); opacity:0.9">الرئيسية</a></li>
+                  <li class="breadcrumb-item active" aria-current="page" style="color: var(--background); font-weight:600">المنتجات</li>
+                </ol>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3" style="background: var(--background-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+        <div>
+          <p class="mb-1" style="color: var(--muted-foreground);">تم العثور على <strong style="color: var(--foreground);">@Model.Products.TotalItemCount</strong> منتج</p>
+          @if (!string.IsNullOrWhiteSpace(Model.Filter.SearchTerm) || Model.Filter.CategoryId.HasValue || !string.IsNullOrWhiteSpace(Model.Filter.Color) || !string.IsNullOrWhiteSpace(Model.Filter.Size) || Model.Filter.Season.HasValue || Model.Filter.MinPrice.HasValue || Model.Filter.MaxPrice.HasValue)
+          {
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              @if (!string.IsNullOrWhiteSpace(Model.Filter.SearchTerm))
+              {
+                <a href="@Url.Action("Index", "Products", new { CategoryId = Model.Filter.CategoryId, Color = Model.Filter.Color, Size = Model.Filter.Size, Season = Model.Filter.Season, MinPrice = Model.Filter.MinPrice, MaxPrice = Model.Filter.MaxPrice, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  بحث: @Model.Filter.SearchTerm <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+              @if (Model.Filter.CategoryId.HasValue)
+              {
+                <a href="@Url.Action("Index", "Products", new { SearchTerm = Model.Filter.SearchTerm, Color = Model.Filter.Color, Size = Model.Filter.Size, Season = Model.Filter.Season, MinPrice = Model.Filter.MinPrice, MaxPrice = Model.Filter.MaxPrice, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  القسم محدد <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+              @if (!string.IsNullOrWhiteSpace(Model.Filter.Color))
+              {
+                <a href="@Url.Action("Index", "Products", new { SearchTerm = Model.Filter.SearchTerm, CategoryId = Model.Filter.CategoryId, Size = Model.Filter.Size, Season = Model.Filter.Season, MinPrice = Model.Filter.MinPrice, MaxPrice = Model.Filter.MaxPrice, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  اللون: @Model.Filter.Color <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+              @if (!string.IsNullOrWhiteSpace(Model.Filter.Size))
+              {
+                <a href="@Url.Action("Index", "Products", new { SearchTerm = Model.Filter.SearchTerm, CategoryId = Model.Filter.CategoryId, Color = Model.Filter.Color, Season = Model.Filter.Season, MinPrice = Model.Filter.MinPrice, MaxPrice = Model.Filter.MaxPrice, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  المقاس: @Model.Filter.Size <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+              @if (Model.Filter.Season.HasValue)
+              {
+                var seasonLabel = Model.Filter.Season == Season.Summer ? "صيفي" : Model.Filter.Season == Season.Winter ? "شتوي" : "كل الأوقات";
+                <a href="@Url.Action("Index", "Products", new { SearchTerm = Model.Filter.SearchTerm, CategoryId = Model.Filter.CategoryId, Color = Model.Filter.Color, Size = Model.Filter.Size, MinPrice = Model.Filter.MinPrice, MaxPrice = Model.Filter.MaxPrice, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  الموسم: @seasonLabel <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+              @if (Model.Filter.MinPrice.HasValue || Model.Filter.MaxPrice.HasValue)
+              {
+                <a href="@Url.Action("Index", "Products", new { SearchTerm = Model.Filter.SearchTerm, CategoryId = Model.Filter.CategoryId, Color = Model.Filter.Color, Size = Model.Filter.Size, Season = Model.Filter.Season, SortBy = Model.Filter.SortBy })"
+                   class="badge-filter rounded-pill">
+                  سعر من @Model.Filter.MinPrice?.ToString("N0") إلى @Model.Filter.MaxPrice?.ToString("N0") <i class="bi bi-x-circle ms-1"></i>
+                </a>
+              }
+            </div>
+          }
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button id="grid4Btn" type="button" class="btn btn-sm"
+                  style="background: var(--card-background); color: var(--foreground); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <i class="bi bi-grid-fill"></i>
+          </button>
+          <button id="grid2Btn" type="button" class="btn btn-sm"
+                  style="background: var(--card-background); color: var(--foreground); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <i class="bi bi-layout-sidebar"></i>
+          </button>
+        </div>
+      </div>
+
+      @if (!Model.Products.Any())
+      {
+        <div class="text-center py-5" style="background: var(--card-background); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+          <div class="mb-3" style="font-size: 3rem; color: var(--muted-foreground);">
+            <i class="bi bi-bag-x"></i>
+          </div>
+          <h5 style="color: var(--foreground); font-weight:700;">لم يتم العثور على منتجات</h5>
+          <p style="color: var(--muted-foreground); font-size: 0.9rem">جرّب تغيير الفلاتر أو اترك البحث فارغاً لرؤية المزيد.</p>
+          <a asp-controller="Products" asp-action="Index" class="btn"
+             style="background: var(--theme-accent); color: var(--background); border-radius: var(--radius-sm);">
+            عرض جميع المنتجات
+          </a>
+        </div>
+      }
+      else
+      {
+        <div id="productsGrid" class="row g-3 products-grid grid-4">
+          @foreach (var p in Model.Products)
+          {
+            <div class="col-6 col-md-4 col-lg-3 product-card-col">
+              @await Html.PartialAsync("_ProductCard", p)
+            </div>
+          }
+        </div>
+
+        @if (Model.Products.PageCount > 1)
+        {
+          <div class="d-flex justify-content-center mt-5">
+            @Html.PagedListPager(Model.Products,
+              page => Url.Action("Index", "Products", new {
+                page,
+                CategoryId   = Model.Filter.CategoryId,
+                SearchTerm   = Model.Filter.SearchTerm,
+                Color        = Model.Filter.Color,
+                Size         = Model.Filter.Size,
+                Season       = Model.Filter.Season,
+                MinPrice     = Model.Filter.MinPrice,
+                MaxPrice     = Model.Filter.MaxPrice,
+                SortBy       = Model.Filter.SortBy
+              }),
+              new X.PagedList.Mvc.Core.PagedListRenderOptions {
+                UlElementClasses = new[] { "pagination" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses      = new[] { "page-link" },
+                DisplayEllipsesWhenNotShowingAllPageNumbers = true
+              })
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const colorSelect = document.getElementById('colorSelect');
+    const sizeSelect = document.getElementById('sizeSelect');
+    const filterCountBadge = document.getElementById('filterCountBadge');
+    const grid4Btn = document.getElementById('grid4Btn');
+    const grid2Btn = document.getElementById('grid2Btn');
+    const productsGrid = document.getElementById('productsGrid');
+
+    function updateFilterCount() {
+      let count = 0;
+      const search = document.querySelector('input[name="SearchTerm"]')?.value.trim();
+      const category = document.querySelector('select[name="CategoryId"]')?.value;
+      const season = document.querySelector('select[name="Season"]')?.value;
+      const minPrice = document.querySelector('input[name="MinPrice"]')?.value;
+      const maxPrice = document.querySelector('input[name="MaxPrice"]')?.value;
+      if (search) count++;
+      if (category) count++;
+      if (colorSelect && colorSelect.value) count++;
+      if (sizeSelect && sizeSelect.value) count++;
+      if (season) count++;
+      if (minPrice) count++;
+      if (maxPrice) count++;
+      filterCountBadge.textContent = count;
+    }
+
+    function activateSwatch(button) {
+      const wasActive = button.classList.contains('active');
+      document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+      if (wasActive) {
+        if (colorSelect) colorSelect.value = '';
+      } else {
+        button.classList.add('active');
+        if (colorSelect) {
+          colorSelect.value = button.dataset.color || '';
+        }
+      }
+      updateFilterCount();
+    }
+
+    function activateSize(button) {
+      const wasActive = button.classList.contains('active');
+      document.querySelectorAll('.size-pill').forEach(el => el.classList.remove('active'));
+      if (wasActive) {
+        if (sizeSelect) sizeSelect.value = '';
+      } else {
+        button.classList.add('active');
+        if (sizeSelect) {
+          sizeSelect.value = button.dataset.size || '';
+        }
+      }
+      updateFilterCount();
+    }
+
+    document.querySelectorAll('.color-swatch').forEach(button => {
+      button.addEventListener('click', function () {
+        activateSwatch(this);
+      });
+    });
+
+    document.querySelectorAll('.size-pill').forEach(button => {
+      button.addEventListener('click', function () {
+        activateSize(this);
+      });
+    });
+
+    if (grid4Btn && grid2Btn && productsGrid) {
+      grid4Btn.addEventListener('click', function () {
+        productsGrid.classList.remove('grid-2');
+        productsGrid.classList.add('grid-4');
+      });
+      grid2Btn.addEventListener('click', function () {
+        productsGrid.classList.remove('grid-4');
+        productsGrid.classList.add('grid-2');
+      });
+    }
+
+    updateFilterCount();
+  });
+</script>

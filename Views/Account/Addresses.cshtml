@@ -1,0 +1,589 @@
+﻿@model List<Address>
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "عناويني";
+}
+
+<style>
+  /* Page Header */
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .breadcrumb-nav {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    color: var(--muted-foreground);
+  }
+
+  .breadcrumb-item {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+
+  .breadcrumb-item:hover {
+    color: var(--theme-accent);
+  }
+
+  .breadcrumb-separator {
+    color: var(--muted-foreground);
+  }
+
+  .breadcrumb-current {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .page-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .page-title-left h1 {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    margin: 0;
+  }
+
+  .page-title-icon {
+    font-size: 1.5rem;
+    color: var(--theme-accent);
+  }
+
+  .add-address-btn {
+    background: transparent;
+    border: 2px solid var(--theme-accent);
+    color: var(--theme-accent);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all var(--transition);
+    text-decoration: none;
+  }
+
+  .add-address-btn:hover {
+    background: var(--theme-accent);
+    color: #fff;
+  }
+
+  /* Address Grid */
+  .addresses-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @@media (max-width: 768px) {
+    .addresses-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Address Card */
+  .address-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+    height: 100%;
+  }
+
+  .address-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .address-card.default {
+    border: 2px solid var(--theme-accent);
+  }
+
+  .address-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .address-card-icon {
+    font-size: 1.3rem;
+    color: var(--theme-accent);
+    flex-shrink: 0;
+  }
+
+  .address-card-title-section {
+    flex: 1;
+  }
+
+  .address-label {
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1rem;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .default-badge {
+    background: rgba(var(--theme-accent-rgb), 0.12);
+    color: var(--theme-accent);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    flex-shrink: 0;
+  }
+
+  .address-body {
+    flex: 1;
+  }
+
+  .address-line {
+    color: var(--foreground);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0.25rem 0;
+  }
+
+  .address-line-muted {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+
+  .address-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-edit {
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    background: transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .btn-edit:hover {
+    background: var(--background);
+    color: var(--theme-accent);
+    border-color: var(--theme-accent);
+  }
+
+  .btn-delete {
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    background: transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .btn-delete:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+  }
+
+  .set-default-link {
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .set-default-link:hover {
+    opacity: 0.8;
+  }
+
+  /* Delete Form */
+  .delete-form {
+    display: contents;
+  }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    font-size: 3.5rem;
+    color: var(--muted-foreground);
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state-title {
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state-description {
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .empty-state-cta {
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity var(--transition);
+  }
+
+  .empty-state-cta:hover {
+    opacity: 0.9;
+  }
+
+  /* Modal Styles */
+  .modal-content {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem;
+  }
+
+  .modal-title {
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1.2rem;
+  }
+
+  .btn-close {
+    filter: invert(1);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--foreground);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    width: 100%;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    font-family: var(--font-ar);
+    transition: all var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.1);
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-check-input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--theme-accent);
+  }
+
+  .form-check-label {
+    cursor: pointer;
+    color: var(--foreground);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .btn-cancel {
+    background: var(--background-secondary);
+    color: var(--foreground);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .btn-cancel:hover {
+    background: var(--background);
+  }
+
+  .btn-save {
+    background: var(--theme-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity var(--transition);
+  }
+
+  .btn-save:hover {
+    opacity: 0.9;
+  }
+</style>
+
+<div class="container" style="padding: 2rem 1rem;">
+  <!-- Page Header -->
+  <div class="page-header">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav">
+      <a href="/" class="breadcrumb-item">الرئيسية</a>
+      <span class="breadcrumb-separator">/</span>
+      <a href="/account/profile" class="breadcrumb-item">حسابي</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">عناويني</span>
+    </div>
+
+    <!-- Title and Add Button -->
+    <div class="page-title">
+      <div class="page-title-left">
+        <i class="bi bi-geo-alt page-title-icon"></i>
+        <h1>عناويني</h1>
+      </div>
+      <button class="add-address-btn" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+        <i class="bi bi-plus-lg"></i>
+        إضافة عنوان جديد
+      </button>
+    </div>
+  </div>
+
+  @if (!Model.Any())
+  {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <i class="bi bi-geo-alt empty-state-icon"></i>
+      <h2 class="empty-state-title">لا توجد عناوين مضافة</h2>
+      <p class="empty-state-description">ابدأ بإضافة عنوان جديد لتسريع عملية الشراء مستقبلاً</p>
+      <button class="empty-state-cta" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+        <i class="bi bi-plus-lg"></i>
+        أضف عنوانك الأول
+      </button>
+    </div>
+  }
+  else
+  {
+    <!-- Addresses Grid -->
+    <div class="addresses-grid">
+      @foreach (var addr in Model)
+      {
+        <div class="address-card @(addr.IsDefault ? "default" : "")">
+          <!-- Header -->
+          <div class="address-card-header">
+            <i class="bi bi-map-pin address-card-icon"></i>
+            <div class="address-card-title-section">
+              <h3 class="address-label">@addr.Label</h3>
+            </div>
+            @if (addr.IsDefault)
+            {
+              <span class="default-badge">افتراضي</span>
+            }
+          </div>
+
+          <!-- Body: Address Details -->
+          <div class="address-body">
+            <div class="address-line">@addr.Street</div>
+            <div class="address-line address-line-muted">@addr.City، @addr.Governorate</div>
+          </div>
+
+          <!-- Footer: Actions -->
+          <div class="address-card-footer">
+            <div class="action-buttons">
+              <a href="@Url.Action("EditAddress", new { id = addr.Id })" class="btn-edit">
+                <i class="bi bi-pencil"></i>
+                تعديل
+              </a>
+              <form method="post" asp-action="DeleteAddress" asp-route-id="@addr.Id" 
+                    onsubmit="return confirm('هل تريد حذف هذا العنوان؟');" class="delete-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-delete">
+                  <i class="bi bi-trash3"></i>
+                  حذف
+                </button>
+              </form>
+            </div>
+            @if (!addr.IsDefault)
+            {
+              <form method="post" asp-action="SetDefaultAddress" asp-route-id="@addr.Id" style="display: contents;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="set-default-link">
+                  <i class="bi bi-check-circle"></i>
+                  تعيين كافتراضي
+                </button>
+              </form>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-plus-circle me-2" style="color: var(--theme-accent);"></i>
+          إضافة عنوان جديد
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="post" asp-action="AddAddress">
+        @Html.AntiForgeryToken()
+
+        <div class="modal-body">
+          <!-- Label -->
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">اسم العنوان</label>
+            <input name="Label" 
+                   class="form-control" 
+                   placeholder="مثال: المنزل، العمل" 
+                   required>
+            <small style="color: var(--muted-foreground); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+              اختر اسماً يساعدك على تمييز العنوان
+            </small>
+          </div>
+
+          <!-- Street -->
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label">الشارع وتفاصيل العنوان</label>
+            <input name="Street" 
+                   class="form-control" 
+                   placeholder="اسم الشارع، رقم المبنى، الشقة" 
+                   required>
+          </div>
+
+          <!-- City & Governorate -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label class="form-label">المدينة</label>
+              <input name="City" 
+                     class="form-control" 
+                     placeholder="القاهرة" 
+                     required>
+            </div>
+            <div>
+              <label class="form-label">المحافظة</label>
+              <input name="Governorate" 
+                     class="form-control" 
+                     placeholder="القاهرة" 
+                     required>
+            </div>
+          </div>
+
+          <!-- Default Checkbox -->
+          <div class="form-check" style="padding: 0.75rem; background: rgba(var(--theme-accent-rgb), 0.05); border-radius: var(--radius-sm); border: 1px solid rgba(var(--theme-accent-rgb), 0.1);">
+            <input name="IsDefault" 
+                   type="checkbox" 
+                   class="form-check-input" 
+                   id="isDefaultCheck" 
+                   value="true">
+            <label class="form-check-label" for="isDefaultCheck">
+              تعيين كعنوان افتراضي
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn-save">
+            <i class="bi bi-check-lg me-1"></i>
+            حفظ العنوان
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

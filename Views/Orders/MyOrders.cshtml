@@ -1,0 +1,369 @@
+@model List<Order>
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "طلباتي";
+
+  var currentStatus = ViewBag.ActiveStatus as string ?? "all";
+  var counts = ViewBag.StatusCounts;
+}
+
+<style>
+  .orders-hero {
+    padding: 3rem 0;
+    margin-bottom: 2.5rem;
+    background: linear-gradient(135deg, var(--theme-accent), var(--foreground));
+    color: #fff;
+  }
+
+  .orders-hero h1 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 2rem;
+    font-weight: 900;
+  }
+
+  .orders-tabs {
+    display: flex;
+    gap: 0.7rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.45rem;
+    scrollbar-width: none;
+  }
+
+  .orders-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--card-background);
+    color: var(--foreground);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 800;
+    transition: transform var(--transition), border-color var(--transition), color var(--transition), background var(--transition);
+  }
+
+  .orders-tab:hover {
+    transform: translateY(-1px);
+    border-color: rgba(var(--theme-accent-rgb), 0.35);
+    color: var(--theme-accent);
+  }
+
+  .orders-tab.active {
+    background: var(--theme-accent);
+    border-color: var(--theme-accent);
+    color: #fff;
+  }
+
+  .orders-tab-count {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--background-secondary);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 900;
+  }
+
+  .orders-tab.active .orders-tab-count {
+    background: rgba(255,255,255,0.22);
+    color: #fff;
+  }
+
+  .orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .order-card {
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    background: var(--card-background);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+
+  .order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .order-card-main {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.25rem;
+    border-right: 4px solid var(--theme-accent);
+    background: linear-gradient(to left, rgba(var(--theme-accent-rgb), 0.05), transparent);
+  }
+
+  .order-id {
+    color: var(--theme-accent);
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+
+  .order-muted {
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    margin-top: 0.25rem;
+  }
+
+  .order-status-pill {
+    width: max-content;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+
+  .order-total {
+    color: var(--foreground);
+    font-size: 1.15rem;
+    font-weight: 900;
+  }
+
+  .order-images {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .order-thumb,
+  .order-extra {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    object-fit: cover;
+    background: var(--background);
+  }
+
+  .order-extra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .order-card-footer {
+    padding: 0.9rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    background: var(--background);
+  }
+
+  .order-details-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--theme-accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 900;
+  }
+
+  .orders-empty {
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    background: var(--card-background);
+    text-align: center;
+  }
+
+  .orders-empty i {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--muted-foreground);
+    font-size: 3.5rem;
+  }
+
+  .orders-empty h2 {
+    margin-bottom: 0.65rem;
+    color: var(--foreground);
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+
+  .orders-empty p {
+    color: var(--muted-foreground);
+    line-height: 1.7;
+  }
+
+  .orders-empty a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1.2rem;
+    border-radius: 12px;
+    background: var(--theme-accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 900;
+  }
+
+  @@media (max-width: 991px) {
+    .order-card-main {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @@media (max-width: 575px) {
+    .order-card-main {
+      grid-template-columns: 1fr;
+    }
+
+    .order-images {
+      justify-content: flex-start;
+    }
+  }
+</style>
+
+<section class="orders-hero">
+  <div class="container">
+    <h1>
+      <i class="bi bi-bag-check"></i>
+      طلباتي
+    </h1>
+  </div>
+</section>
+
+<div class="container" style="margin-bottom: 3rem;">
+  <div class="orders-tabs">
+    <a asp-controller="Orders" asp-action="MyOrders" asp-route-status="all" class="orders-tab @(currentStatus == "all" ? "active" : "")">
+      <i class="bi bi-check-all"></i>
+      الكل
+      <span class="orders-tab-count">@(counts?.All ?? 0)</span>
+    </a>
+    <a asp-controller="Orders" asp-action="MyOrders" asp-route-status="pending" class="orders-tab @(currentStatus == "pending" ? "active" : "")">
+      <i class="bi bi-hourglass-split"></i>
+      في انتظار التأكيد
+      <span class="orders-tab-count">@(counts?.Pending ?? 0)</span>
+    </a>
+    <a asp-controller="Orders" asp-action="MyOrders" asp-route-status="active" class="orders-tab @(currentStatus == "active" ? "active" : "")">
+      <i class="bi bi-truck"></i>
+      قيد التنفيذ
+      <span class="orders-tab-count">@(counts?.Active ?? 0)</span>
+    </a>
+    <a asp-controller="Orders" asp-action="MyOrders" asp-route-status="delivered" class="orders-tab @(currentStatus == "delivered" ? "active" : "")">
+      <i class="bi bi-check-circle"></i>
+      تم التسليم
+      <span class="orders-tab-count">@(counts?.Delivered ?? 0)</span>
+    </a>
+    <a asp-controller="Orders" asp-action="MyOrders" asp-route-status="cancelled" class="orders-tab @(currentStatus == "cancelled" ? "active" : "")">
+      <i class="bi bi-x-circle"></i>
+      ملغية
+      <span class="orders-tab-count">@(counts?.Cancelled ?? 0)</span>
+    </a>
+  </div>
+
+  @if (!Model.Any())
+  {
+    <div class="orders-empty">
+      <i class="bi bi-bag"></i>
+      <h2>لا توجد طلبات هنا</h2>
+      <p>لا توجد طلبات مطابقة لهذا الفلتر. يمكنك الرجوع لكل الطلبات أو بدء التسوق الآن.</p>
+      <a href="/products">
+        <i class="bi bi-bag-plus"></i>
+        تسوق الآن
+      </a>
+    </div>
+  }
+  else
+  {
+    <div class="orders-list">
+      @foreach (var order in Model)
+      {
+        var (bg, fg, lbl) = order.Status switch {
+          OrderStatus.Pending => ("#FFFBEB", "#D97706", "قيد الانتظار"),
+          OrderStatus.Confirmed => ("#EFF6FF", "#2563EB", "تم التأكيد"),
+          OrderStatus.Processing => ("#EFF6FF", "#2563EB", "جاري التجهيز"),
+          OrderStatus.Shipped => ("#F5F3FF", "#7C3AED", "في الطريق"),
+          OrderStatus.Delivered => ("var(--success-bg)", "var(--success)", "تم التسليم"),
+          OrderStatus.Cancelled => ("var(--danger-bg)", "var(--danger)", "ملغي"),
+          OrderStatus.FailedDelivery => ("var(--danger-bg)", "var(--danger)", "فشل التسليم"),
+          _ => ("#FFFBEB", "#D97706", "غير معروف")
+        };
+
+        var productImages = order.Items
+          .Where(i => i.Product != null && i.Product.Images.Any())
+          .Take(2)
+          .ToList();
+
+        <div class="order-card">
+          <div class="order-card-main">
+            <div>
+              <div class="order-id">#@order.Id</div>
+              <div class="order-muted">@order.CreatedAt.ToString("dd/MM/yyyy")</div>
+            </div>
+
+            <div>
+              <span class="order-status-pill" style="background:@bg; color:@fg;">@lbl</span>
+              <div class="order-muted">@order.Items.Count منتج</div>
+            </div>
+
+            <div>
+              <div class="order-muted">الإجمالي</div>
+              <div class="order-total">@order.Total.ToString("N0") جنيه</div>
+            </div>
+
+            <div class="order-images">
+              @if (productImages.Any())
+              {
+                @foreach (var item in productImages)
+                {
+                  var imageUrl = item.Product.Images.FirstOrDefault(x => x.IsMain)?.ImageUrl
+                    ?? item.Product.Images.FirstOrDefault()?.ImageUrl
+                    ?? "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=200&q=80&auto=format&fit=crop";
+                  <img src="@imageUrl" alt="Product" class="order-thumb">
+                }
+              }
+              else
+              {
+                <img src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=200&q=80&auto=format&fit=crop" alt="Product" class="order-thumb">
+              }
+
+              @if (order.Items.Count > 2)
+              {
+                <div class="order-extra">+@(order.Items.Count - 2)</div>
+              }
+            </div>
+          </div>
+
+          <div class="order-card-footer">
+            <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="order-details-link">
+              عرض التفاصيل
+              <i class="bi bi-arrow-left"></i>
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

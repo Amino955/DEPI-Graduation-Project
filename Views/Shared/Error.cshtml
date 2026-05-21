@@ -1,0 +1,221 @@
+﻿@model ErrorViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "خطأ";
+  var statusCode = ViewContext.HttpContext.Response.StatusCode;
+  var displayCode = statusCode == 0 ? 500 : statusCode;
+}
+
+<style>
+  /* Container */
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background Pattern */
+  .error-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(var(--theme-accent-rgb), 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(var(--theme-accent-rgb), 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Content */
+  .error-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* Error Number */
+  .error-number {
+    font-size: clamp(6rem, 15vw, 12rem);
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--theme-accent) 0%, var(--foreground) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.05em;
+    user-select: none;
+  }
+
+  /* Icon */
+  .error-icon {
+    font-size: 3rem;
+    color: var(--warning);
+    margin-bottom: 2rem;
+    display: block;
+  }
+
+  /* Heading */
+  .error-heading {
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+
+  /* Description */
+  .error-description {
+    color: var(--muted-foreground);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* Request ID Block */
+  .request-id-block {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin: 2rem 0;
+    text-align: start;
+  }
+
+  .request-id-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted-foreground);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .request-id-value {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: var(--foreground);
+    word-break: break-all;
+    font-weight: 600;
+  }
+
+  /* Buttons */
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+  }
+
+  .error-btn-primary {
+    background: var(--theme-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .error-btn-primary:hover {
+    background: var(--theme-accent);
+    opacity: 0.85;
+    transform: translateY(-2px);
+  }
+
+  .error-btn-secondary {
+    background: transparent;
+    color: var(--foreground);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.65rem 2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .error-btn-secondary:hover {
+    border-color: var(--theme-accent);
+    color: var(--theme-accent);
+    background: rgba(var(--theme-accent-rgb), 0.05);
+  }
+
+  /* 404 Specific */
+  .error-page.error-404 .error-number {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @@keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+</style>
+
+<div class="error-page" dir="rtl" lang="ar">
+  <div class="error-content">
+    <!-- Error Number -->
+    <div class="error-number">@displayCode</div>
+
+    <!-- Warning Icon -->
+    <i class="bi bi-exclamation-triangle error-icon"></i>
+
+    <!-- Heading -->
+    <h1 class="error-heading">حدث خطأ ما!</h1>
+
+    <!-- Description -->
+    @if (statusCode == 404)
+    {
+      <p class="error-description">
+        عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها
+      </p>
+    }
+    else
+    {
+      <p class="error-description">
+        عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.
+      </p>
+    }
+
+    <!-- Request ID (if applicable) -->
+    @if (Model.ShowRequestId && !string.IsNullOrEmpty(Model.RequestId))
+    {
+      <div class="request-id-block">
+        <span class="request-id-label">معرّف الطلب</span>
+        <code class="request-id-value">@Model.RequestId</code>
+      </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="error-actions">
+      <a href="/" class="error-btn-primary">
+        <i class="bi bi-house"></i>
+        العودة للرئيسية
+      </a>
+      <button class="error-btn-secondary" onclick="window.location.reload()">
+        <i class="bi bi-arrow-clockwise"></i>
+        أعد المحاولة
+      </button>
+    </div>
+  </div>
+</div>

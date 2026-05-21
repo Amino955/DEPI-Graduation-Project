@@ -1,0 +1,155 @@
+@model List<DeliveryUserViewModel>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "إدارة المندوبين";
+    var totalCount = Model?.Count() ?? 0;
+    var activeCount = Model?.Count(d => d.IsActive) ?? 0;
+    var totalAssigned = Model?.Sum(d => (int?)d.TotalAssigned) ?? 0;
+}
+
+<style>
+  .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .stat-row { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .stat-card { background:var(--card-background); border:1px solid var(--border-color); border-left:4px solid; border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; align-items:center; gap:0.75rem; min-width:180px; }
+  .stat-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.05rem; }
+  .stat-text { display:flex; flex-direction:column; }
+  .stat-value { font-weight:800; color:var(--foreground); font-size:1rem; }
+  .stat-label { font-size:0.82rem; color:var(--muted-foreground); }
+  .card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); }
+  .table { width:100%; border-collapse:collapse; }
+  .table thead { background:var(--background-secondary); }
+  .table th { padding:12px 14px; color:var(--muted-foreground); font-weight:600; border:none; }
+  .table td { padding:12px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); vertical-align:middle; }
+  .table tbody tr:hover { background:var(--background-secondary); }
+  .avatar { width:44px; height:44px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+  .muted { color:var(--muted-foreground); }
+  .amount { color:var(--theme-accent); font-weight:700; }
+  .status-pill { padding:6px 10px; border-radius:999px; font-weight:700; }
+  .progress-track { height:10px; background:var(--background); border:1px solid var(--border-color); border-radius:999px; width:120px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--success); }
+  .empty-state { text-align:center; padding:2rem; color:var(--muted-foreground); }
+  .actions { display:flex; gap:0.4rem; }
+</style>
+
+<div class="page-header">
+    <div>
+        <h3 style="margin:0; color:var(--foreground); font-weight:800">إدارة المندوبين <span class="muted" style="font-weight:600; font-size:0.95rem">(@totalCount)</span></h3>
+        <div style="color:var(--muted-foreground); margin-top:6px">قائمة مندوبي التوصيل وإحصاءاتهم</div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center">
+        <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Create" class="btn btn-sm text-white" style="background:var(--theme-accent); border-radius:var(--radius-md); font-weight:700;"><i class="bi bi-plus-lg me-1"></i>إضافة مندوب جديد</a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stat-row">
+    <div class="stat-card" style="border-left-color:#2563EB;">
+        <div class="stat-icon" style="background:#EFF6FF; color:#2563EB"><i class="bi bi-person-badge"></i></div>
+        <div class="stat-text"><div class="stat-value">@totalCount</div><div class="stat-label">إجمالي المندوبين</div></div>
+    </div>
+    <div class="stat-card" style="border-left-color:var(--success);">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success)"><i class="bi bi-person-check"></i></div>
+        <div class="stat-text"><div class="stat-value">@activeCount</div><div class="stat-label">مندوبون نشطون</div></div>
+    </div>
+    <div class="stat-card" style="border-left-color:#D97706;">
+        <div class="stat-icon" style="background:#FFFBEB; color:#D97706"><i class="bi bi-truck"></i></div>
+        <div class="stat-text"><div class="stat-value">@totalAssigned</div><div class="stat-label">طلبات في التوصيل (مجموع)</div></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>المندوب</th>
+                    <th>الهاتف</th>
+                    <th>الطلبات الكلية</th>
+                    <th>تم التسليم</th>
+                    <th>فشل التسليم</th>
+                    <th>نسبة النجاح</th>
+                    <th>الإيرادات</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var d in Model)
+                    {
+                        var assigned = d.TotalAssigned;
+                        var delivered = d.TotalDelivered;
+                        var failed = d.TotalFailed;
+                        var successRate = (assigned > 0) ? Math.Round(100.0 * (double)delivered / (double)assigned, 1) : 0.0;
+                        var avatarColor = GetAvatarColor(d.FullName);
+                        <tr>
+                            <td style="min-width:220px;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar" style="background:@avatarColor">@(!string.IsNullOrEmpty(d.FullName) ? d.FullName.Substring(0,1).ToUpper() : "?")</div>
+                                    <div>
+                                        <div style="font-weight:700; color:var(--foreground);">@d.FullName</div>
+                                        <div class="muted" style="font-size:0.9rem;">@d.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="muted">@d.PhoneNumber</td>
+                            <td>@assigned</td>
+                            <td style="color:var(--success); font-weight:700;">@delivered</td>
+                            <td style="color:var(--danger); font-weight:700;">@failed</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div class="progress-track" aria-hidden="true"><div class="progress-fill" style="width:@(successRate)%"></div></div>
+                                    <div style="min-width:36px; text-align:left; font-weight:700;">@successRate%</div>
+                                </div>
+                            </td>
+                            <td class="amount">@d.TotalRevenue.ToString("N0") ج.م</td>
+                            <td>
+                                @if (d.IsActive)
+                                {
+                                    <span class="status-pill" style="background:var(--success-bg); color:var(--success);">نشط</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill" style="background:var(--background); color:var(--muted-foreground);">معطّل</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <a asp-area="Admin" asp-controller="AdminDelivery" asp-action="Details" asp-route-id="@d.Id" class="btn btn-sm" style="border:1px solid var(--theme-accent); color:var(--theme-accent)">عرض</a>
+                                    <form method="post" asp-area="Admin" asp-controller="AdminDelivery" asp-action="ToggleActive" asp-route-id="@d.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm" style="border:1px solid #D97706; color:#D97706">@((d.IsActive) ? "إيقاف" : "تفعيل")</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="bi bi-person-x" style="font-size:40px; display:block; margin-bottom:8px; color:var(--muted-foreground)"></i>
+                                <div style="font-weight:700; color:var(--foreground)">لا يوجد مندوبون</div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    private string GetAvatarColor(string name)
+    {
+        var colors = new[] { "#F97316", "#2563EB", "#16A34A", "#7C3AED", "#0D9488", "#4F46E5", "#D97706" };
+        if (string.IsNullOrEmpty(name)) return "#9CA3AF";
+        var hash = 0;
+        foreach (var ch in name) hash = ((hash << 5) - hash) + ch;
+        var idx = Math.Abs(hash) % colors.Length;
+        return colors[idx];
+    }
+}

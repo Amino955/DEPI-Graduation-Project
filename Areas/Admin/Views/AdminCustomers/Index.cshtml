@@ -1,0 +1,174 @@
+@model List<CustomerViewModel>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "إدارة العملاء";
+    var search = Context.Request.Query["search"].ToString();
+    var filter = Context.Request.Query["filter"].ToString(); // all | active | inactive
+}
+
+<style>
+  .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .stat-row { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .stat-card { background:var(--card-background); border:1px solid var(--border-color); border-right:4px solid; border-radius:var(--radius-md); padding:0.9rem 1rem; display:flex; align-items:center; gap:0.75rem; min-width:200px; }
+  .stat-icon { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; }
+  .stat-text { display:flex; flex-direction:column; }
+  .stat-value { font-weight:800; color:var(--foreground); font-size:1.05rem; }
+  .stat-label { font-size:0.82rem; color:var(--muted-foreground); }
+  .filter-card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.75rem; margin-bottom:1rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+  .filter-pill { padding:6px 10px; border-radius:999px; background:var(--background); color:var(--muted-foreground); border:1px solid var(--border-color); cursor:pointer; font-weight:700; }
+  .filter-pill.active { background:var(--card-background); border-color:var(--theme-accent); color:var(--theme-accent); }
+  .customers-table th { padding:12px 14px; color:var(--muted-foreground); font-weight:600; border:none; }
+  .customers-table td { padding:12px 14px; border-bottom:1px solid var(--border-color); color:var(--foreground); vertical-align:middle; }
+  .customers-table tbody tr:hover { background:var(--background-secondary); }
+  .avatar-circle { width:44px; height:44px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+  .name-link { font-weight:700; color:var(--foreground); text-decoration:none; }
+  .muted { color:var(--muted-foreground); }
+  .amount { color:var(--theme-accent); font-weight:700; }
+  .badge-count { padding:6px 8px; border-radius:999px; background:var(--background); color:var(--muted-foreground); font-weight:700; }
+  .btn-sm-outline { border:1px solid var(--border-color); background:transparent; color:var(--foreground); padding:6px 8px; border-radius:6px; }
+  .btn-sm-accent { border:1px solid var(--theme-accent); color:var(--theme-accent); background:transparent; padding:6px 8px; border-radius:6px; }
+  .btn-sm-amber { border:1px solid #D97706; color:#D97706; background:transparent; padding:6px 8px; border-radius:6px; }
+  .empty-state { text-align:center; padding:2.5rem; color:var(--muted-foreground); }
+</style>
+
+<div class="page-header">
+  <div>
+    <h2 style="margin:0; color:var(--foreground); font-weight:800">إدارة العملاء <span class="muted" style="font-weight:600; font-size:0.95rem">(@Model?.Count ?? 0)</span></h2>
+    <div style="color:var(--muted-foreground); margin-top:6px;">قائمة العملاء وإحصاءاتهم</div>
+  </div>
+  <div style="display:flex; gap:0.5rem; align-items:center">
+    <a class="btn btn-sm" style="border:1px solid var(--border-color); color:var(--foreground); display:none;" title="تصدير CSV"><i class="bi bi-download"></i></a>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stat-row">
+  <div class="stat-card" style="border-right-color:#2563EB;">
+    <div class="stat-icon" style="background:#EFF6FF; color:#2563EB;"><i class="bi bi-people"></i></div>
+    <div class="stat-text">
+      <div class="stat-value">@(Model?.Count ?? 0)</div>
+      <div class="stat-label">إجمالي العملاء</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="border-right-color:var(--success);">
+    <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success);"><i class="bi bi-person-check"></i></div>
+    <div class="stat-text">
+      <div class="stat-value">@(Model?.Count(c => c.IsActive) ?? 0)</div>
+      <div class="stat-label">عملاء نشطون</div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="border-right-color:#D97706;">
+    <div class="stat-icon" style="background:#FFFBEB; color:#D97706;"><i class="bi bi-person-plus"></i></div>
+    <div class="stat-text">
+      <div class="stat-value">@(Model?.Count(c => c.CreatedAt >= DateTime.UtcNow.AddDays(-30)) ?? 0)</div>
+      <div class="stat-label">عملاء جدد هذا الشهر</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter -->
+<div class="filter-card">
+  <form method="get" class="d-flex align-items-center" style="gap:0.5rem; flex:1;">
+    <div style="flex:1; min-width:220px;">
+      <div class="input-group">
+        <span class="input-group-text" style="background:var(--background); border:1px solid var(--border-color); color:var(--muted-foreground);"><i class="bi bi-search"></i></span>
+        <input type="text" name="search" value="@search" class="form-control" placeholder="ابحث بالاسم أو البريد الإلكتروني..." />
+      </div>
+    </div>
+    <input type="hidden" name="filter" value="@filter" />
+    <div style="display:flex; gap:0.5rem;">
+      <button type="submit" class="btn btn-sm btn-accent">بحث</button>
+      <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Index" class="btn btn-sm btn-outline-secondary">إعادة</a>
+    </div>
+  </form>
+  <!-- Filter pills -->
+  <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+    <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Index" asp-route-filter="all" class="filter-pill @(string.IsNullOrEmpty(filter) || filter=="all" ? "active" : "")">الكل</a>
+    <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Index" asp-route-filter="active" class="filter-pill @(filter=="active" ? "active" : "")">نشط</a>
+  </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card" style="background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); margin-top:1rem;">
+  @if (Model != null && Model.Any())
+  {
+    <div class="table-responsive">
+      <table class="table customers-table mb-0">
+        <thead>
+          <tr>
+            <th>العميل</th>
+            <th>الهاتف</th>
+            <th>الطلبات</th>
+            <th>إجمالي الإنفاق</th>
+            <th>تاريخ التسجيل</th>
+            <th>الحالة</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (var c in Model)
+          {
+            <tr>
+              <td style="min-width:260px;">
+                @{ var initial = !string.IsNullOrEmpty(c.FullName) ? c.FullName.Substring(0,1).ToUpper() : "؟"; }
+                <div class="d-flex align-items-center gap-3">
+                  <div class="avatar-circle" style="background:@(GetAvatarColor(c.FullName));">@initial</div>
+                  <div>
+                    <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Details" asp-route-id="@c.Id" class="name-link">@c.FullName</a>
+                    <div class="muted" style="font-size:0.9rem;">@c.Email</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">@c.PhoneNumber</td>
+              <td><span class="badge-count">@c.OrdersCount @("طلب")</span></td>
+              <td class="amount">@c.TotalSpent.ToString("N0") ج.م</td>
+              <td class="muted">@c.CreatedAt.ToString("dd/MM/yyyy")</td>
+              <td>
+                @if (c.IsActive)
+                {
+                  <span class="badge-pill" style="background:var(--success-bg); color:var(--success);">نشط</span>
+                }
+                else
+                {
+                  <span class="badge-pill" style="background:var(--background); color:var(--muted-foreground);">معطّل</span>
+                }
+              </td>
+              <td>
+                <div style="display:flex; gap:0.4rem;">
+                  <a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Details" asp-route-id="@c.Id" class="btn-sm-accent" title="عرض">عرض</a>
+
+                  <form method="post" asp-area="Admin" asp-controller="AdminCustomers" asp-action="ToggleActive" asp-route-id="@c.Id" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-sm-amber" title="تبديل الحالة">@((c.IsActive) ? "إيقاف" : "تفعيل")</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  else
+  {
+    <div class="empty-state">
+      <i class="bi bi-people" style="font-size:40px; display:block; margin-bottom:8px; color:var(--muted-foreground)"></i>
+      <div style="font-weight:700; color:var(--foreground)">لا يوجد عملاء مطابقة</div>
+    </div>
+  }
+</div>
+
+@functions {
+    // Deterministic avatar color based on name (keeps colors themed)
+    private string GetAvatarColor(string name)
+    {
+        var colors = new[] { "#F97316", "#2563EB", "#16A34A", "#7C3AED", "#0D9488", "#4F46E5", "#D97706" };
+        if (string.IsNullOrEmpty(name)) return "#9CA3AF";
+        var hash = 0;
+        foreach (var ch in name) hash = ((hash << 5) - hash) + ch;
+        var idx = Math.Abs(hash) % colors.Length;
+        return colors[idx];
+    }
+}

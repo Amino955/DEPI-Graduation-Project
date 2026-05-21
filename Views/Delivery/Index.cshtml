@@ -1,0 +1,89 @@
+@model List<Order>
+@{
+  Layout = "_DeliveryLayout";
+  ViewData["Title"] = "طلبات اليوم";
+}
+
+<style>
+  .delivery-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem }
+  .delivery-tabs { display:flex; gap:0.5rem; margin-bottom:1.25rem }
+  .delivery-tab { background:transparent; border:1px solid var(--border-color); color:var(--foreground); padding:0.45rem 0.9rem; border-radius:8px; text-decoration:none }
+  .delivery-tab.active { background: rgba(var(--theme-accent-rgb),0.12); border-color:var(--theme-accent); color:var(--theme-accent); font-weight:700 }
+  .delivery-order-card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1rem; margin-bottom:1rem; box-shadow:var(--shadow-sm) }
+  .status-badge { padding:6px 10px; border-radius:9999px; font-weight:700; font-size:0.8rem }
+  .status-pending { background: #FFFBEB; color: #D97706; border: 1px solid rgba(217,119,6,0.2); }
+  .status-shipped { background: #F5F3FF; color: #7C3AED; border: 1px solid rgba(124,58,237,0.2); }
+  .status-delivered { background: var(--success-bg); color: var(--success); border: 1px solid rgba(var(--theme-accent-rgb),0.15); }
+  .empty-state { color: var(--success); padding:3rem 1rem; text-align:center }
+  .order-actions a { text-decoration:none }
+</style>
+
+<div dir="rtl" lang="ar">
+  <div class="delivery-header">
+    <h4 class="fw-bold mb-0" style="color:var(--foreground)">طلبات اليوم</h4>
+    <span class="badge rounded-pill px-3 py-2" style="background:var(--theme-accent);color:#fff;font-size:0.9rem">
+      @Model.Count
+    </span>
+  </div>
+
+  <div class="delivery-tabs" role="tablist" aria-label="فلتر الطلبات">
+    <a class="delivery-tab @(string.IsNullOrEmpty(Context.Request.Query["status"]) || Context.Request.Query["status"]=="All" ? "active":"")" href="?status=All">الكل</a>
+    <a class="delivery-tab @(Context.Request.Query["status"]=="Pending" ? "active":"")" href="?status=Pending">قيد الانتظار</a>
+    <a class="delivery-tab @(Context.Request.Query["status"]=="Shipped" ? "active":"")" href="?status=Shipped">جاري التوصيل</a>
+    <a class="delivery-tab @(Context.Request.Query["status"]=="Delivered" ? "active":"")" href="?status=Delivered">تم التسليم</a>
+  </div>
+
+  @if (!Model.Any())
+  {
+    <div class="empty-state">
+      <i class="bi bi-check-circle fs-1 mb-3 d-block"></i>
+      <h5 class="fw-bold">لا توجد طلبات اليوم</h5>
+    </div>
+  }
+  else
+  {
+    @foreach (var order in Model)
+    {
+      string statusLabel;
+      string statusClass;
+      switch (order.Status)
+        {
+          case OrderStatus.Pending:
+            statusLabel = "قيد الانتظار"; statusClass = "status-pending"; break;
+          case OrderStatus.Shipped:
+            statusLabel = "جاري التوصيل"; statusClass = "status-shipped"; break;
+          case OrderStatus.Delivered:
+            statusLabel = "تم التسليم"; statusClass = "status-delivered"; break;
+          default:
+            statusLabel = order.Status.ToString(); statusClass = "status-pending"; break;
+        }
+
+      <div class="delivery-order-card">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h6 class="fw-bold mb-0" style="color:var(--foreground)">طلب #@order.Id</h6>
+              <small class="text-muted">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+            </div>
+            <div style="color:var(--muted-foreground); font-size:0.9rem">@order.User?.FullName</div>
+          </div>
+          <div class="text-end">
+            <span class="status-badge @statusClass">@statusLabel</span>
+          </div>
+        </div>
+
+        <div class="mt-2" style="color:var(--muted-foreground);font-size:0.95rem">
+          <i class="bi bi-geo-alt me-1" style="color:var(--theme-accent)"></i>
+          @order.ShippingStreet، @order.ShippingCity، @order.ShippingGovernorate
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mt-3 order-actions">
+          <div style="font-weight:700;color:var(--foreground)">@order.Total.ToString("N0") جنيه</div>
+          <div>
+            <a href="/delivery/orders/@order.Id" class="btn btn-sm" style="background:var(--theme-accent);color:#fff;border-radius:var(--radius-sm);padding:8px 12px">عرض التفاصيل</a>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

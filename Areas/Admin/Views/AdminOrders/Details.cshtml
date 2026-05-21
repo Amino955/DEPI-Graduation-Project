@@ -1,0 +1,331 @@
+@model TellaStore.Models.Entities.Order
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "تفاصيل الطلب";
+}
+
+<style>
+  .page-header-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+  .status-large { padding:10px 18px; border-radius:999px; font-weight:800; display:inline-block; }
+  .container-grid { display:grid; grid-template-columns: 2fr 1fr; gap:1.5rem; align-items:start; }
+  @@media (max-width:991px) { .container-grid { grid-template-columns: 1fr; } }
+  .card { background:var(--card-background); border:1px solid var(--border-color); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); overflow:hidden; }
+  .card-header { padding:0.85rem 1rem; background:var(--background-secondary); border-bottom:1px solid var(--border-color); font-weight:700; color:var(--foreground); }
+  .card-body { padding:1rem; }
+  .item-row { display:flex; gap:0.75rem; align-items:center; padding:0.75rem 0; border-bottom:1px dashed var(--border-color); }
+  .item-thumb { width:50px; height:65px; border-radius:6px; background:#F3F4F6; display:flex; align-items:center; justify-content:center; color:#9CA3AF; overflow:hidden; border:1px solid var(--border-color); }
+  .item-title { font-weight:700; color:var(--foreground); }
+  .item-meta { font-size:0.85rem; color:var(--muted-foreground); margin-top:4px; }
+  .item-right { margin-left:auto; text-align:left; }
+  .summary-line { display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border-color); }
+  .total-line { display:flex; justify-content:space-between; padding:12px 0; font-size:1.25rem; font-weight:800; color:var(--theme-accent); }
+  .timeline { position:relative; padding-right:24px; border-right:2px solid var(--border-color); }
+  .timeline .tl-item { position:relative; padding-right:22px; margin-bottom:20px; }
+  .tl-dot { position:absolute; right:-34px; top:6px; width:16px; height:16px; border-radius:50%; background:var(--background); border:4px solid var(--theme-accent); display:flex; align-items:center; justify-content:center; }
+  .tl-dot.latest { width:20px; height:20px; border-width:5px; animation: pulse 1.6s infinite; }
+  @@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--theme-accent-rgb),0.15);} 70% { box-shadow: 0 0 0 12px rgba(var(--theme-accent-rgb),0);} 100% { box-shadow: 0 0 0 0 rgba(var(--theme-accent-rgb),0);} }
+  .avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.25rem; }
+  .muted { color:var(--muted-foreground); }
+  .btn-accent { background:var(--theme-accent); color:#fff; border-radius:var(--radius-sm); }
+  .pill { padding:4px 8px; border-radius:999px; background:var(--background); color:var(--muted-foreground); font-weight:700; }
+</style>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert py-2 small mb-4" style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success); border-radius: var(--radius-sm)">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert py-2 small mb-4" style="background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius-sm)">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+    </div>
+}
+
+<!-- Header -->
+<div class="page-header-row">
+    <div>
+        <h3 style="margin:0; font-weight:800; color:var(--foreground)">تفاصيل الطلب #@Model.Id</h3>
+        <div style="margin-top:6px; color:var(--muted-foreground); font-size:0.95rem">تاريخ الإنشاء: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center">
+        @{
+            var (bgS, fgS, lblS) = Model.Status switch {
+                TellaStore.Models.Entities.OrderStatus.Pending => ("#FFFBEB", "#D97706", "قيد الانتظار"),
+                TellaStore.Models.Entities.OrderStatus.Confirmed => ("#EFF6FF", "#2563EB", "تم التأكيد"),
+                TellaStore.Models.Entities.OrderStatus.Processing => ("#EFF6FF", "#2563EB", "جاري التجهيز"),
+                TellaStore.Models.Entities.OrderStatus.Shipped => ("#F5F3FF", "#7C3AED", "في الطريق"),
+                TellaStore.Models.Entities.OrderStatus.Delivered => ("var(--success-bg)", "var(--success)", "تم التسليم"),
+                TellaStore.Models.Entities.OrderStatus.Cancelled => ("var(--danger-bg)", "var(--danger)", "ملغي"),
+                TellaStore.Models.Entities.OrderStatus.FailedDelivery => ("var(--danger-bg)", "var(--danger)", "فشل التسليم"),
+                _ => ("#FFFBEB", "#D97706", Model.Status.ToString())
+            };
+        }
+        <span class="status-large" style="background:@bgS; color:@fgS;">@lblS</span>
+        <a asp-area="Admin" asp-controller="AdminOrders" asp-action="Index" class="btn" style="border:1px solid var(--border-color); color:var(--foreground);">رجوع</a>
+    </div>
+</div>
+
+<div class="container-grid mt-3">
+    <!-- Main Column -->
+    <div class="col-main">
+        <!-- Order Items Card -->
+        <div class="card mb-4">
+            <div class="card-header">المنتجات</div>
+            <div class="card-body">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="item-row">
+                        <div class="item-thumb">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" style="width:100%; height:100%; object-fit:cover;" alt="@item.ProductName" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-image" style="font-size:20px; color:#9CA3AF"></i>
+                            }
+                        </div>
+                        <div>
+                            <div class="item-title">@item.ProductName</div>
+                            <div class="item-meta">
+                                @if (!string.IsNullOrEmpty(item.Color)) { <span class="pill">@item.Color</span> }
+                                @if (!string.IsNullOrEmpty(item.Size)) { <span class="pill" style="margin-inline-start:6px">@item.Size</span> }
+                            </div>
+                        </div>
+                        <div class="item-right">
+                            <div style="font-weight:700; color:var(--foreground)">@item.Quantity x @item.UnitPrice.ToString("N0") ج.م</div>
+                            <div class="muted">@((item.Quantity * item.UnitPrice).ToString("N0")) ج.م</div>
+                        </div>
+                    </div>
+                }
+
+                <div style="margin-top:12px">
+                    <div class="summary-line"><span class="muted">المجموع الفرعي</span><span>@Model.SubTotal.ToString("N0") ج.م</span></div>
+                    @{
+                        var shippingFeeProp = Model.GetType().GetProperty("ShippingFee");
+                        if (shippingFeeProp != null)
+                        {
+                            var shippingFee = (decimal?)shippingFeeProp.GetValue(Model);
+                            if (shippingFee.HasValue && shippingFee.Value > 0)
+                            {
+                                <div class="summary-line"><span class="muted">رسوم التوصيل</span><span>@shippingFee.Value.ToString("N0") ج.م</span></div>
+                            }
+                        }
+                    }
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="summary-line"><span class="muted">الخصم</span><span>-@Model.DiscountAmount.ToString("N0") ج.م</span></div>
+                    }
+                    <div class="total-line"><span>الإجمالي</span><span>@Model.Total.ToString("N0") ج.م</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Card -->
+        <div class="card mb-4">
+            <div class="card-header">سجل الطلب</div>
+            <div class="card-body">
+                <div class="timeline">
+                    @{
+                        var orderedHistory = Model.StatusHistory.OrderBy(h => h.CreatedAt).ToList();
+                        var latest = orderedHistory.LastOrDefault();
+                    }
+                    @foreach (var h in orderedHistory)
+                    {
+                        var isLatest = latest != null && h.Id == latest.Id;
+                        <div class="tl-item">
+                            <div class="tl-dot @(isLatest ? "latest" : "")" style="border-color:@(isLatest ? "var(--theme-accent)" : "var(--theme-accent)")"></div>
+                            <div style="margin-right:8px">
+                                <div style="font-weight:700; color:var(--foreground)">
+                                    @(h.NewStatus switch {
+                                        TellaStore.Models.Entities.OrderStatus.Pending => "قيد الانتظار",
+                                        TellaStore.Models.Entities.OrderStatus.Confirmed => "تم التأكيد",
+                                        TellaStore.Models.Entities.OrderStatus.Processing => "جاري التجهيز",
+                                        TellaStore.Models.Entities.OrderStatus.Shipped => "في الطريق",
+                                        TellaStore.Models.Entities.OrderStatus.Delivered => "تم التسليم",
+                                        TellaStore.Models.Entities.OrderStatus.Cancelled => "ملغي",
+                                        TellaStore.Models.Entities.OrderStatus.FailedDelivery => "فشل التسليم",
+                                        _ => h.NewStatus.ToString()
+                                    })
+                                </div>
+                                <div class="muted" style="font-size:0.85rem">@h.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (!string.IsNullOrEmpty(h.Notes)) { <div class="muted" style="margin-top:6px;">@h.Notes</div> }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-side">
+        <!-- Customer Info -->
+        <div class="card mb-4">
+            <div class="card-header">بيانات العميل</div>
+            <div class="card-body text-center">
+                @{
+                    var initials = !string.IsNullOrEmpty(Model.User?.FullName) ? Model.User.FullName.Substring(0,1).ToUpper() : "؟";
+                }
+                <div class="avatar" style="background:linear-gradient(135deg,var(--theme-accent), rgba(var(--theme-accent-rgb),0.6)); margin:0 auto 8px">@initials</div>
+                <div style="font-weight:800; color:var(--foreground)">@Model.User?.FullName</div>
+                <div class="muted" style="font-size:0.9rem; margin-top:6px"><a href="mailto:@Model.User?.Email" style="color:var(--muted-foreground); text-decoration:none">@Model.User?.Email</a></div>
+                <div class="muted" style="font-size:0.9rem; margin-top:6px"><a href="tel:@Model.User?.PhoneNumber" style="color:var(--muted-foreground); text-decoration:none">@Model.User?.PhoneNumber</a></div>
+                <div style="margin-top:10px"><a asp-area="Admin" asp-controller="AdminCustomers" asp-action="Details" asp-route-id="@Model.User?.Id" class="btn btn-sm" style="border:1px solid var(--border-color); color:var(--foreground)">عرض ملف العميل</a></div>
+            </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-geo-alt me-1"></i>عنوان التوصيل</div>
+            <div class="card-body">
+                <div style="color:var(--foreground);">@Model.ShippingStreet</div>
+                <div class="muted">@Model.ShippingCity - @Model.ShippingGovernorate</div>
+                @if (!string.IsNullOrEmpty(Model.ShippingNotes)) { <div class="muted" style="margin-top:8px">@Model.ShippingNotes</div> }
+                @{
+                    var addr = string.Join(", ", new[]{ Model.ShippingStreet, Model.ShippingCity, Model.ShippingGovernorate }.Where(s=>!string.IsNullOrEmpty(s)));
+                    var mapsUrl = "https://maps.google.com/?q=" + System.Net.WebUtility.UrlEncode(addr);
+                }
+                <div style="margin-top:8px"><a href="@mapsUrl" target="_blank" class="btn btn-sm" style="border:1px solid var(--border-color); color:var(--foreground)"><i class="bi bi-map me-1"></i>عرض على الخريطة</a></div>
+            </div>
+        </div>
+
+        <!-- Status Update -->
+        <div class="card mb-4">
+            <div class="card-header">تحديث الحالة</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small">الحالة الحالية</label>
+                    <div>
+                        <span style="background:@bgS; color:@fgS; padding:6px 12px; border-radius:999px; font-weight:800; display:inline-block">@lblS</span>
+                    </div>
+                </div>
+
+                <form method="post" asp-action="UpdateStatus" asp-route-orderId="@Model.Id">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label small">اختر الحالة الجديدة</label>
+                        <select name="newStatus" class="form-select">
+                            @foreach(var s in Enum.GetValues(typeof(TellaStore.Models.Entities.OrderStatus)).Cast<TellaStore.Models.Entities.OrderStatus>())
+                            {
+                                        <option value="@s" selected="@(s == Model.Status)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">ملاحظة (اختياري)</label>
+                        <textarea name="note" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">تحديث</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delivery Assignment (existing forms preserved) -->
+        <div>
+            @* Preserve existing conditional forms for confirm/ship/assign/cancel from original view *@
+            @if (Model.Status == TellaStore.Models.Entities.OrderStatus.Pending)
+            {
+                <form method="post" asp-action="ConfirmOrder" asp-route-orderId="@Model.Id" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label small">ملاحظات التأكيد</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="اختياري: مثال تم التأكيد هاتفياً"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-2 mb-2" onclick="return confirm('هل أنت متأكد من تأكيد الطلب؟')">✅ تأكيد الطلب وبدء التجهيز</button>
+                </form>
+            }
+
+            @if (Model.Status == TellaStore.Models.Entities.OrderStatus.Processing || Model.Status == TellaStore.Models.Entities.OrderStatus.Confirmed)
+            {
+                <form method="post" asp-action="ShipOrder" asp-route-orderId="@Model.Id" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    @if (Model.DeliveryAssignment != null)
+                    {
+                        <div class="alert py-2 small mb-2" style="background: var(--background-secondary); border: 1px solid var(--border-color); color: var(--foreground)">
+                            <i class="bi bi-info-circle me-1" style="color: var(--theme-accent)"></i>
+                            المندوب الحالي: <strong>@Model.DeliveryAssignment.DeliveryUser?.FullName</strong>
+                        </div>
+                    }
+                    <div class="mb-2">
+                        <label class="form-label small">@(Model.DeliveryAssignment != null ? "تغيير المندوب" : "اختر المندوب")</label>
+                        <select name="deliveryUserId" class="form-select form-select-sm" required>
+                            <option value="">اختر المندوب للبدء بالشحن</option>
+                            @if (ViewBag.DeliveryUsers != null)
+                            {
+                                @foreach (var user in ViewBag.DeliveryUsers)
+                                {
+                                    <option value="@user.Id" selected="@(Model.DeliveryAssignment?.DeliveryUserId == user.Id)">@user.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">ملاحظات للمندوب</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="ملاحظات اختيارية عن الشحن..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100 fw-bold py-2" onclick="return confirm('هل أنت متأكد من شحن الطلب؟')">🚚 تعيين مندوب وشحن الطلب</button>
+                </form>
+            }
+
+            @if (Model.Status == TellaStore.Models.Entities.OrderStatus.Shipped)
+            {
+                <div class="p-3 rounded-3 mb-3 border" style="background: var(--background-secondary); border-color: var(--border-color) !important">
+                    <div class="mb-2">
+                        <small class="text-muted d-block">المندوب الحالي</small>
+                        <div class="fw-bold" style="color: var(--theme-accent)">@Model.DeliveryAssignment?.DeliveryUser?.FullName</div>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">كود التسليم</small>
+                        <div class="fs-4 fw-bold" style="letter-spacing:4px; color: var(--foreground)">@Model.DeliveryCode</div>
+                    </div>
+                    <div class="mt-2 text-muted small">
+                        <i class="bi bi-hourglass-split me-1"></i>بانتظار تأكيد المندوب بكود التسليم
+                    </div>
+                </div>
+
+                <form method="post" asp-action="AssignDelivery" asp-route-orderId="@Model.Id" class="border-top pt-3" style="border-top-color: var(--border-color) !important">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label small">تغيير المندوب (إعادة تعيين)</label>
+                    <div class="d-flex gap-2">
+                        <select name="deliveryUserId" class="form-select form-select-sm" required>
+                            @if (ViewBag.DeliveryUsers != null)
+                            {
+                                @foreach (var user in ViewBag.DeliveryUsers)
+                                {
+                                    <option value="@user.Id" selected="@(Model.DeliveryAssignment?.DeliveryUserId == user.Id)">@user.FullName</option>
+                                }
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-sm" style="border: 1px solid var(--border-color); color: var(--foreground)" onclick="return confirm('هل تريد تغيير المندوب؟')">تحديث</button>
+                    </div>
+                </form>
+            }
+
+            @if (new[] { TellaStore.Models.Entities.OrderStatus.Delivered, TellaStore.Models.Entities.OrderStatus.Cancelled, TellaStore.Models.Entities.OrderStatus.FailedDelivery }.Contains(Model.Status))
+            {
+                <div class="text-center py-3 text-muted">
+                    <i class="bi bi-slash-circle mb-2 d-block fs-4"></i>
+                    <span>لا توجد إجراءات متاحة</span>
+                </div>
+            }
+
+            @if (new[] { TellaStore.Models.Entities.OrderStatus.Pending, TellaStore.Models.Entities.OrderStatus.Confirmed, TellaStore.Models.Entities.OrderStatus.Processing }.Contains(Model.Status))
+            {
+                <hr class="my-4" style="border-color: var(--border-color) !important">
+                <form method="post" asp-action="CancelOrder" asp-route-orderId="@Model.Id">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label small text-danger">سبب الإلغاء</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="1" placeholder="لماذا تريد إلغاء الطلب؟"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger w-100 btn-sm py-2" onclick="return confirm('هل أنت متأكد من إلغاء هذا الطلب بالكامل؟ لا يمكن التراجع!')">
+                        <i class="bi bi-x-circle me-1"></i>إلغاء الطلب
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,209 @@
+@model TellaStore.Models.ViewModels.Admin.DiscountFormViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "إضافة خصم جديد";
+}
+
+<style>
+  .center-card { max-width:780px; margin:0 auto; }
+  .card { background:var(--card-background); border:1px solid var(--border-color); border-radius:12px; box-shadow:var(--shadow-sm); overflow:hidden; }
+  .card-body { padding:1.25rem; }
+  .card-header { padding:0.85rem 1.25rem; background:var(--background-secondary); border-bottom:1px solid var(--border-color); font-weight:700; color:var(--foreground); }
+  .form-label { color:var(--foreground); font-weight:500; }
+  .form-control, .form-select { background:var(--background); border:1px solid var(--border-color); color:var(--foreground); border-radius:6px; }
+  .type-grid { display:flex; gap:0.75rem; }
+  .type-card { flex:1; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:transparent; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start; }
+  .type-card .icon { width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .type-card h6 { margin:0; font-weight:800; }
+  .type-card p { margin:4px 0 0; font-size:0.9rem; color:var(--muted-foreground); }
+  .btn-check:checked + .type-card { border-color:var(--theme-accent); background:rgba(var(--theme-accent-rgb),0.06); }
+  .input-group .form-control { border-top-right-radius:6px; border-bottom-right-radius:6px; }
+  .generate-btn { border:1px solid var(--border-color); background:transparent; color:var(--foreground); border-radius:6px; padding:6px 8px; }
+  .checklist { max-height:220px; overflow:auto; border:1px solid var(--border-color); border-radius:6px; padding:8px; background:var(--background); }
+  .checklist .form-check { margin-bottom:6px; }
+  .form-footer { margin-top:1rem; display:flex; gap:0.5rem; justify-content:center; align-items:center; }
+  @@media (max-width:767px) { .type-grid { flex-direction:column; } }
+</style>
+
+<div class="center-card">
+  <div class="card">
+    <div class="card-header">إضافة خصم جديد
+      <a asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Index" class="btn btn-sm" style="float:left; border:1px solid var(--border-color); color:var(--foreground);">رجوع</a>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+        <div class="mb-3">
+          <label asp-for="Name" class="form-label">اسم الخصم <span class="text-danger">*</span></label>
+          <input asp-for="Name" class="form-control" placeholder="اسم الخصم" />
+          <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">نوع الخصم</label>
+          <div class="type-grid">
+            <input asp-for="Type" class="btn-check" type="radio" value="0" id="typePercent" autocomplete="off" checked />
+            <label class="type-card" for="typePercent">
+              <div class="icon" style="background:rgba(59,130,246,0.12); color:#2563EB;"><i class="bi bi-percent"></i></div>
+              <div>
+                <h6>نسبة مئوية</h6>
+                <p>خصم بنسبة من الإجمالي</p>
+              </div>
+            </label>
+
+            <input asp-for="Type" class="btn-check" type="radio" value="1" id="typeFixed" autocomplete="off" />
+            <label class="type-card" for="typeFixed">
+              <div class="icon" style="background:rgba(245,158,11,0.12); color:#D97706;"><i class="bi bi-cash"></i></div>
+              <div>
+                <h6>مبلغ ثابت</h6>
+                <p>خصم بمبلغ محدد</p>
+              </div>
+            </label>
+            <input asp-for="Type" class="btn-check" type="radio" value="2" id="typeFreeShip" autocomplete="off" />
+            <label class="type-card" for="typeFreeShip">
+              <div class="icon" style="background:rgba(124,58,237,0.12); color:#7C3AED;"><i class="bi bi-truck"></i></div>
+              <div>
+                <h6>شحن مجاني</h6>
+                <p>إلغاء رسوم التوصيل</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Target Selector -->
+        <div class="mb-3">
+          <label class="form-label">يُطبَّق على <span class="text-danger">*</span></label>
+          <div class="type-grid">
+            <input asp-for="Target" class="btn-check" type="radio" value="0" id="targetAll" autocomplete="off" checked />
+            <label class="type-card" for="targetAll">
+              <div class="icon" style="background:rgba(16,185,129,0.12); color:var(--success);"><i class="bi bi-globe"></i></div>
+              <div><h6>عام (كوبون)</h6><p>يُطبَّق على أي طلب</p></div>
+            </label>
+            <input asp-for="Target" class="btn-check" type="radio" value="1" id="targetProduct" autocomplete="off" />
+            <label class="type-card" for="targetProduct">
+              <div class="icon" style="background:rgba(59,130,246,0.12); color:#2563EB;"><i class="bi bi-box-seam"></i></div>
+              <div><h6>منتج محدد</h6><p>خصم على منتج بعينه</p></div>
+            </label>
+            <input asp-for="Target" class="btn-check" type="radio" value="2" id="targetCategory" autocomplete="off" />
+            <label class="type-card" for="targetCategory">
+              <div class="icon" style="background:rgba(124,58,237,0.12); color:#7C3AED;"><i class="bi bi-grid"></i></div>
+              <div><h6>قسم محدد</h6><p>خصم على قسم بأكمله</p></div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Product Selector (يظهر فقط عند اختيار "منتج محدد") -->
+        <div id="productSelectorBox" class="mb-3" style="display:none;">
+          <label class="form-label">اختر المنتج <span class="text-danger">*</span></label>
+          <select asp-for="ProductId" class="form-select">
+            <option value="">— اختر منتجاً —</option>
+            @if (Model?.Products != null) {
+              @foreach(var p in Model.Products) {
+                <option value="@p.Id">@p.Name</option>
+              }
+            }
+          </select>
+          <span asp-validation-for="ProductId" class="text-danger"></span>
+        </div>
+
+        <!-- Category Selector (يظهر فقط عند اختيار "قسم محدد") -->
+        <div id="categorySelectorBox" class="mb-3" style="display:none;">
+          <label class="form-label">اختر القسم <span class="text-danger">*</span></label>
+          <select asp-for="CategoryId" class="form-select">
+            <option value="">— اختر قسماً —</option>
+            @if (Model?.Categories != null) {
+              @foreach(var c in Model.Categories) {
+                <option value="@c.Id">@c.Name</option>
+              }
+            }
+          </select>
+          <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+          <label asp-for="Code" class="form-label">كود الخصم</label>
+          <div class="input-group">
+            <input asp-for="Code" class="form-control" placeholder="مثال: TELLASALE" />
+            <button type="button" class="generate-btn" onclick="generateCode()">توليد كود عشوائي</button>
+          </div>
+          <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label asp-for="Value" class="form-label">القيمة <span class="text-danger">*</span></label>
+            <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" />
+            <span asp-validation-for="Value" class="text-danger"></span>
+          </div>
+          <div class="col-md-6">
+            <label asp-for="MinimumOrderAmount" class="form-label">الحد الأدنى للطلب</label>
+            <div class="input-group">
+              <input asp-for="MinimumOrderAmount" class="form-control" type="number" step="0.01" min="0" />
+              <span class="input-group-text">ج</span>
+            </div>
+            <span asp-validation-for="MinimumOrderAmount" class="text-danger"></span>
+          </div>
+
+          <div class="col-md-6">
+            <label asp-for="StartDate" class="form-label">تاريخ البدء</label>
+            <input asp-for="StartDate" class="form-control" type="date" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+          </div>
+          <div class="col-md-6">
+            <label asp-for="EndDate" class="form-label">تاريخ الانتهاء</label>
+            <input asp-for="EndDate" class="form-control" type="date" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check">
+              <input asp-for="IsActive" class="form-check-input" id="IsActive" />
+              <label asp-for="IsActive" class="form-check-label">نشط</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <a asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Index" class="btn" style="border:1px solid var(--border-color); color:var(--muted-foreground)">إلغاء</a>
+          <button type="submit" class="btn btn-accent" style="background:var(--theme-accent); color:#fff; padding:10px 18px;">إنشاء الخصم</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+function generateCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    const el = document.querySelector('[name="Code"]');
+    if (el) el.value = code;
+}
+
+function filterChecklist(searchId, listId) {
+    const q = document.getElementById(searchId).value.toLowerCase();
+    const list = document.getElementById(listId);
+    if (!list) return;
+    Array.from(list.querySelectorAll('.form-check')).forEach(div => {
+        const label = div.querySelector('label').textContent.toLowerCase();
+        div.style.display = label.includes(q) ? '' : 'none';
+    });
+}
+
+function updateSelectorBoxes() {
+    const val = document.querySelector('[name="Target"]:checked')?.value;
+    document.getElementById('productSelectorBox').style.display  = (val === '1') ? '' : 'none';
+    document.getElementById('categorySelectorBox').style.display = (val === '2') ? '' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[name="Target"]').forEach(r => {
+        r.addEventListener('change', updateSelectorBoxes);
+    });
+    updateSelectorBoxes();
+});
+</script>
+}

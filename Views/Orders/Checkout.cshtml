@@ -1,0 +1,470 @@
+﻿@model CheckoutViewModel
+@{
+  Layout = "_Layout";
+  ViewData["Title"] = "إتمام الشراء";
+}
+
+<style>
+  .checkout-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .checkout-step {
+    flex: 1 1 160px;
+    min-width: 160px;
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  .checkout-step.active {
+    border-color: var(--theme-accent);
+    background: rgba(var(--theme-accent-rgb), 0.08);
+    color: var(--foreground);
+    font-weight: 700;
+  }
+  .checkout-step i {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(var(--theme-accent-rgb), 0.16);
+    color: var(--theme-accent);
+  }
+  .checkout-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--foreground);
+    font-weight: 800;
+  }
+  .section-header i {
+    color: var(--theme-accent);
+    font-size: 1.2rem;
+  }
+  .address-card,
+  .payment-card {
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color var(--transition), background-color var(--transition), transform var(--transition);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .address-card:hover,
+  .payment-card:hover {
+    transform: translateY(-1px);
+  }
+  .address-card.active,
+  .payment-card.active {
+    border-color: var(--theme-accent);
+    background: rgba(var(--theme-accent-rgb), 0.08);
+  }
+  .address-text,
+  .payment-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .address-meta,
+  .payment-meta {
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .default-badge {
+    background: var(--theme-accent);
+    color: #fff;
+    font-size: 0.75rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.7rem;
+    font-weight: 700;
+  }
+  .form-control, .form-select {
+    background: var(--background);
+    border-color: var(--border-color);
+    color: var(--foreground);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .form-control:focus, .form-select:focus {
+    background: var(--background);
+    color: var(--foreground);
+    border-color: var(--theme-accent);
+    box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.15);
+  }
+  .form-label {
+    color: var(--foreground);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+  .new-address-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--background-secondary);
+  }
+  .payment-card {
+    grid-template-columns: auto 1fr auto;
+  }
+  .payment-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(var(--theme-accent-rgb), 0.16);
+    color: var(--theme-accent);
+    font-size: 1.2rem;
+  }
+  .premium-summary-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    position: sticky;
+    top: 100px;
+    box-shadow: var(--shadow-md);
+  }
+  .premium-summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--muted-foreground);
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.95rem;
+  }
+  .premium-summary-row.total {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--foreground);
+    border-bottom: none;
+    padding-top: 1rem;
+  }
+  .summary-item-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+  }
+  .summary-item-name {
+    color: var(--foreground);
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .summary-item-price {
+    color: var(--foreground);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .mini-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .summary-extra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: var(--background-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    color: var(--muted-foreground);
+    font-size: 0.9rem;
+  }
+  .trust-badges {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .trust-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--background-secondary);
+    color: var(--foreground);
+    font-size: 0.95rem;
+  }
+  .trust-badge i {
+    font-size: 1.1rem;
+    color: var(--theme-accent);
+  }
+  .checkout-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  .checkout-submit {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-lg);
+    background: var(--theme-accent);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    border: none;
+  }
+  .checkout-submit:hover {
+    opacity: 0.95;
+  }
+  .checkout-note {
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    text-align: center;
+    line-height: 1.6;
+  }
+  @@media (max-width: 991.98px) {
+    .checkout-step {
+      min-width: 100%;
+    }
+    .address-card,
+    .payment-card {
+      grid-template-columns: 1fr auto;
+    }
+  }
+  @@media (max-width: 767.98px) {
+    .checkout-card {
+      padding: 1.25rem;
+    }
+  }
+</style>
+
+<div class="container py-4" style="max-width:1100px">
+  <div class="checkout-progress">
+    <div class="checkout-step">
+      <i class="bi bi-basket"></i>
+      <div>
+        <div>الخطوة 1</div>
+        <div>السلة</div>
+      </div>
+    </div>
+    <div class="checkout-step active">
+      <i class="bi bi-bag-check"></i>
+      <div>
+        <div>الخطوة 2</div>
+        <div>الشراء</div>
+      </div>
+    </div>
+    <div class="checkout-step">
+      <i class="bi bi-check-circle"></i>
+      <div>
+        <div>الخطوة 3</div>
+        <div>التأكيد</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" asp-action="Checkout">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="checkout-card">
+          <div class="section-header">
+            <i class="bi bi-geo-alt"></i>
+            <span>عنوان التوصيل</span>
+          </div>
+
+          @if (Model.SavedAddresses.Any())
+          {
+            @foreach (var addr in Model.SavedAddresses)
+            {
+              <div class="address-card @(addr.IsDefault ? "active" : "")" onclick="document.getElementById('addr_@addr.Id').checked=true;hideNewForm()">
+                <div>
+                  <input class="form-check-input" type="radio" name="SelectedAddressId"
+                         id="addr_@addr.Id" value="@addr.Id"
+                         @(addr.IsDefault ? "checked=\"checked\"" : "")
+                         onchange="hideNewForm()">
+                </div>
+                <div class="address-text">
+                  <label class="fw-bold" for="addr_@addr.Id" style="color:var(--foreground);">@addr.Label</label>
+                  <div class="address-meta">@addr.Street، @addr.City، @addr.Governorate</div>
+                </div>
+                <div>
+                  @if (addr.IsDefault)
+                  {
+                    <span class="default-badge">افتراضي</span>
+                  }
+                </div>
+              </div>
+            }
+            <div class="address-card" onclick="document.getElementById('newAddrOpt').checked=true;showNewForm()" style="border-style:dashed;">
+              <div></div>
+              <div class="address-text">
+                <label class="fw-bold" for="newAddrOpt" style="color:var(--theme-accent);">
+                  <i class="bi bi-plus-circle me-1"></i>أضف عنوان جديد
+                </label>
+                <div class="address-meta">أضف عنوان توصيل جديد إذا أردت توصيل الطلب إلى مكان آخر</div>
+              </div>
+              <div>
+                <input class="form-check-input" type="radio" name="SelectedAddressId"
+                       id="newAddrOpt" value="" onchange="showNewForm()">
+              </div>
+            </div>
+            <div id="new-address-form" style="display:none;" class="new-address-panel">
+              @await Html.PartialAsync("_NewAddressFields", Model)
+            </div>
+          }
+          else
+          {
+            <div class="new-address-panel">
+              @await Html.PartialAsync("_NewAddressFields", Model)
+            </div>
+          }
+        </div>
+
+        <div class="checkout-card">
+          <div class="section-header">
+            <i class="bi bi-telephone"></i>
+            <span>بيانات التواصل</span>
+          </div>
+          <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+          <div class="mb-3">
+            <label asp-for="Phone" class="form-label">رقم الهاتف <span class="text-danger">*</span></label>
+            <input asp-for="Phone" type="tel" class="form-control" placeholder="01xxxxxxxxx" dir="ltr">
+            <span asp-validation-for="Phone" class="text-danger small"></span>
+          </div>
+          <div class="mb-3">
+            <label asp-for="Notes" class="form-label">ملاحظات للمندوب (اختياري)</label>
+            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="مثلاً: اتصل قبل التسليم، الدور الثالث..."></textarea>
+            <span asp-validation-for="Notes" class="text-danger small"></span>
+          </div>
+        </div>
+
+        <div class="checkout-card">
+          <div class="section-header">
+            <i class="bi bi-wallet2"></i>
+            <span>طريقة الدفع</span>
+          </div>
+          <div class="payment-card" onclick="document.getElementById('pay_cod').checked=true;">
+            <div class="payment-icon"><i class="bi bi-cash-coin"></i></div>
+            <div class="payment-text">
+              <div class="fw-bold" style="color:var(--foreground);">الدفع عند الاستلام</div>
+              <div class="payment-meta">ادفع نقداً أو بالكارت لدى استلام طلبك من مندوب التوصيل.</div>
+              <div class="payment-meta" style="display:flex;align-items:center;gap:0.5rem;">
+                <i class="bi bi-lock-fill"></i>
+                <span>معاملة آمنة</span>
+              </div>
+            </div>
+            <div>
+              <input class="form-check-input" type="radio" name="PaymentMethod" id="pay_cod" value="cod" checked>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="premium-summary-card">
+          <h5 class="fw-bold mb-3 pb-2" style="border-bottom:1px solid var(--border-color); color: var(--foreground);">
+            ملخص طلبك (@Model.Cart.ItemCount منتج)
+          </h5>
+
+          @{ var summaryItems = Model.Cart.Items.Take(4).ToList(); var extraCount = Model.Cart.Items.Count - summaryItems.Count; }
+          <div class="mini-summary-list">
+            @foreach (var item in summaryItems)
+            {
+              <div class="d-flex align-items-center gap-2">
+                <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/no-image.png" : item.ImageUrl)" class="summary-item-thumb" alt="@item.ProductName">
+                <div class="flex-grow-1">
+                  <div class="summary-item-name">@item.ProductName</div>
+                  <div style="font-size:0.82rem;color:var(--muted-foreground);">@item.Color — @item.Size — ×@item.Quantity</div>
+                </div>
+                <div class="summary-item-price">@item.TotalPrice.ToString("N0") ج</div>
+              </div>
+            }
+          </div>
+          @if (extraCount > 0)
+          {
+            <div class="summary-extra">
+              <i class="bi bi-plus-circle"></i>
+              <span>+@extraCount منتجات أخرى</span>
+            </div>
+          }
+
+          <div class="premium-summary-row">
+            <span>المجموع الفرعي</span>
+            <span>@Model.Cart.SubTotal.ToString("N0") جنيه</span>
+          </div>
+          <div class="premium-summary-row">
+            <span>رسوم التوصيل</span>
+            <span>مجاني</span>
+          </div>
+          @if (Model.Cart.DiscountAmount > 0)
+          {
+            <div class="premium-summary-row" style="color: var(--success);">
+              <span>الخصم</span>
+              <span class="fw-bold">− @Model.Cart.DiscountAmount.ToString("N0") جنيه</span>
+            </div>
+          }
+          <div class="premium-summary-row total">
+            <span>الإجمالي</span>
+            <span>@Model.Cart.Total.ToString("N0") جنيه</span>
+          </div>
+
+          <div class="checkout-actions">
+            <button type="submit" class="checkout-submit">
+              <i class="bi bi-check2-circle"></i>تأكيد الطلب
+            </button>
+            <p class="checkout-note">بإرسال الطلب، أوافق على الشروط وسياسة التوصيل الخاصة بـ Tella.</p>
+          </div>
+
+          <div class="trust-badges">
+            <div class="trust-badge">
+              <i class="bi bi-shield-lock"></i>
+              دفع آمن
+            </div>
+            <div class="trust-badge">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              إرجاع مجاني
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+@section Scripts {
+<script>
+function showNewForm() {
+  const form = document.getElementById('new-address-form');
+  if (form) form.style.display = 'block';
+}
+function hideNewForm() {
+  const form = document.getElementById('new-address-form');
+  if (form) form.style.display = 'none';
+}
+</script>
+}

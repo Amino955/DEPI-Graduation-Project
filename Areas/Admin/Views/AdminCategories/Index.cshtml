@@ -1,0 +1,856 @@
+@model IEnumerable<TellaStore.Models.Entities.Category>
+
+
+
+@{
+
+
+
+    Layout = "_AdminLayout";
+
+
+
+    ViewData["Title"] = "الأقسام";
+
+
+
+    var parentCategories = Model.Where(c => c.ParentCategoryId == null).OrderBy(c => c.SortOrder).ToList();
+
+
+
+}
+
+
+
+
+
+
+
+<style>
+
+
+
+  .premium-card {
+
+
+
+    background: var(--card-background) !important;
+
+
+
+    border: 1px solid var(--border-color) !important;
+
+
+
+    border-radius: var(--radius-lg) !important;
+
+
+
+    box-shadow: var(--shadow-sm) !important;
+
+
+
+    overflow: hidden;
+
+
+
+  }
+
+
+
+  .card-header-compact { padding:0.75rem 1rem; background:var(--background-secondary); border-bottom:1px solid var(--border-color); font-weight:700; color:var(--foreground); }
+
+
+
+  .card-body { padding:1rem; }
+
+
+
+  .form-label { color: var(--foreground) !important; font-weight: 500 !important; }
+
+
+
+  .form-control, .form-select { background: var(--background) !important; border-color: var(--border-color) !important; color: var(--foreground) !important; border-radius: var(--radius-sm); }
+
+
+
+  .form-control:focus, .form-select:focus { border-color: var(--theme-accent) !important; box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb), 0.15) !important; }
+
+
+
+  .tree-row { display:flex; gap:0.75rem; align-items:center; padding:0.5rem 0.5rem; border-bottom:1px solid transparent; }
+
+
+
+  .tree-row:hover { background: var(--background-secondary); }
+
+
+
+  .tree-name { font-weight:700; color:var(--foreground); }
+
+
+
+  .tree-slug { color:var(--muted-foreground); font-size:0.9rem; }
+
+
+
+  .badge-pill { padding:4px 8px; border-radius:999px; font-weight:700; font-size:0.82rem; }
+
+
+
+  .sub-list { padding-right:1.5rem; border-right:2px solid var(--border-color); margin-top:0.5rem; }
+
+
+
+.sub-row { padding:0.5rem; border-radius:6px; margin-bottom:0.5rem; background:var(--background); }
+  .actions { margin-left:auto; display:flex; gap:0.4rem; }
+
+  .toggle-switch { display:inline-flex; align-items:center; }
+
+
+
+  .chev { cursor:pointer; color:var(--muted-foreground); }
+
+
+
+  @@media (max-width:991px) { .col-left, .col-right { flex:0 0 100%; max-width:100%; } }
+
+
+
+</style>
+
+
+
+
+
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+
+
+
+    <h5 class="mb-0 fw-bold" style="color: var(--foreground); font-weight: 700">إدارة الأقسام</h5>
+
+
+
+</div>
+
+
+
+
+
+
+
+@if (TempData["Success"] != null)
+
+
+
+{
+
+
+
+    <div class="alert py-2 small mb-3" style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success); border-radius: var(--radius-sm)">@TempData["Success"]</div>
+
+
+
+}
+
+
+
+else if (TempData["Error"] != null)
+
+
+
+{
+
+
+
+    <div class="alert py-2 small mb-3" style="background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); border-radius: var(--radius-sm)">@TempData["Error"]</div>
+
+
+
+}
+
+
+
+
+
+
+
+<div class="d-flex" style="gap:1.5rem; flex-wrap:wrap;">
+
+
+
+    <!-- Left: Add Category Form -->
+
+
+
+    <div class="col-left" style="flex:0 0 41.666%; max-width:41.666%;">
+
+
+
+        <div class="premium-card">
+
+
+
+            <div class="card-header-compact">إضافة قسم جديد</div>
+
+
+
+            <div class="card-body">
+
+
+
+                <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Create">
+
+
+
+                    @Html.AntiForgeryToken()
+
+
+
+                    <div class="mb-3">
+
+
+
+                        <label class="form-label">اسم القسم <span class="text-danger">*</span></label>
+
+
+
+                        <input type="text" name="name" class="form-control" required placeholder="اسم القسم" />
+
+
+
+                    </div>
+
+
+
+                    <div class="mb-3">
+
+
+
+                        <label class="form-label">Slug</label>
+
+
+
+                        <input type="text" name="slug" class="form-control" placeholder="يُملأ تلقائياً من الاسم" />
+
+
+
+                        <div class="form-text muted" style="margin-top:4px">تُملأ تلقائياً من الاسم إن تُرك الحقل فارغاً</div>
+
+
+
+                    </div>
+
+
+
+                    <div class="mb-3">
+
+
+
+                        <label class="form-label">القسم الأعلى</label>
+
+
+
+                        <select name="parentCategoryId" class="form-select">
+
+
+
+                            <option value="">بدون أب — قسم رئيسي</option>
+
+
+
+                            @foreach(var p in parentCategories) { <option value="@p.Id">@p.Name</option> }
+
+
+
+                        </select>
+
+
+
+                    </div>
+
+
+
+                    <div class="row g-2 mb-3">
+
+
+
+                        <div class="col-6">
+
+
+
+                            <label class="form-label">الترتيب</label>
+
+
+
+                            <input type="number" name="sortOrder" class="form-control" value="0" min="0" />
+
+
+
+                        </div>
+
+
+
+                        <div class="col-6 d-flex align-items-end">
+
+
+
+                            <div class="form-check form-switch ms-auto">
+
+
+
+                                <input type="checkbox" name="isActive" class="form-check-input" id="isActiveNew" value="true" checked />
+
+
+
+                                <label for="isActiveNew" class="form-check-label" style="color:var(--foreground)">نشط</label>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                    <div>
+
+
+
+                        <button type="submit" class="btn btn-accent w-100">إضافة القسم</button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- Right: Categories Tree -->
+
+
+
+    <div class="col-right" style="flex:0 0 58.333%; max-width:58.333%;">
+
+
+
+        <div class="premium-card">
+
+
+
+            <div class="card-header-compact">
+
+
+
+                <div>الأقسام الحالية <span class="muted" style="font-weight:600; margin-inline-start:8px">(@Model.Count())</span></div>
+
+
+
+            </div>
+
+
+
+            <div class="card-body">
+
+
+
+                @if (parentCategories.Any())
+
+
+
+                {
+
+
+
+                    <div id="categoriesTree">
+
+
+
+                        @foreach (var parent in parentCategories)
+
+
+
+                        {
+
+
+
+                            var subCats = parent.SubCategories?.OrderBy(s => s.SortOrder).ToList() ?? new List<TellaStore.Models.Entities.Category>();
+
+
+
+                            <div class="tree-node mb-3">
+
+
+
+                                <div class="tree-row" data-id="@parent.Id">
+
+
+
+                                    <div class="chev" onclick="toggleSub(@parent.Id)"><i class="bi bi-chevron-down"></i></div>
+
+
+
+                                    <div style="min-width:220px;">
+
+
+
+                                        <div class="tree-name">@parent.Name</div>
+
+
+
+                                        <div class="tree-slug">@parent.Slug</div>
+
+
+
+                                    </div>
+
+
+
+                                    <div class="ms-2">
+
+
+
+                                        <span class="badge-pill" style="background:@(parent.IsActive?"var(--success-bg)":"var(--danger-bg)"); color:@(parent.IsActive?"var(--success)":"var(--danger)")">@(parent.IsActive?"نشط":"معطّل")</span>
+
+
+
+                                    </div>
+
+
+
+                                    <div class="ms-2 muted">ترتيب: <strong>@parent.SortOrder</strong></div>
+
+
+
+                                    <div class="actions">
+
+
+
+                                        <!-- Inline edit form kept -->
+
+
+
+                                        <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Edit" asp-route-id="@parent.Id" class="d-flex align-items-center" style="gap:6px;" onsubmit="return validateEditForm(this);">
+                                            @Html.AntiForgeryToken()
+                                            <input type="text" name="name" class="form-control form-control-sm edit-name-input" value="@parent.Name" style="display:none; max-width:150px;" />
+                                            <input type="hidden" name="isActive" value="@parent.IsActive.ToString().ToLower()" />
+                                            <input type="hidden" name="sortOrder" value="@parent.SortOrder" />
+                                            <button type="button" class="btn btn-sm" onclick="toggleEditInput(this);" title="تعديل"><i class="bi bi-pencil"></i></button>
+                                            <button type="submit" class="btn btn-sm btn-success edit-save-btn" style="display:none;" title="حفظ"><i class="bi bi-check-lg"></i></button>
+                                        </form>
+
+
+
+
+
+
+
+                                        <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Toggle" asp-route-id="@parent.Id" onsubmit="return false;" class="d-inline">
+
+
+
+                                            @Html.AntiForgeryToken()
+
+
+
+                                            <button type="button" class="btn btn-sm" onclick="toggleCategoryActive(@parent.Id, !@parent.IsActive)" title="تبديل الحالة"><i class="bi @(parent.IsActive?"bi-toggle-on":"bi-toggle-off")"></i></button>
+
+
+
+                                        </form>
+
+
+
+
+
+
+
+                                        <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Delete" asp-route-id="@parent.Id" onsubmit="return confirm('هل تريد حذف هذا القسم وجميع الفرعية؟');" class="d-inline">
+
+
+
+                                            @Html.AntiForgeryToken()
+
+
+
+                                            <button type="submit" class="btn btn-sm" title="حذف" style="color: var(--danger); border: 1px solid var(--danger); background: transparent;">
+
+
+
+                                                <i class="bi bi-trash"></i>
+
+
+
+                                            </button>
+
+
+
+                                        </form>
+
+
+
+                                    </div>
+
+
+
+                                </div>
+
+
+
+
+
+
+
+                                <!-- Subcategories (collapsible) -->
+
+
+
+                                <div id="subs-@parent.Id" class="sub-list mt-2">
+
+
+
+                                    @if (subCats.Any())
+
+
+
+                                    {
+
+
+
+                                        @foreach (var sub in subCats)
+
+
+
+                                        {
+
+
+
+                                            <div class="sub-row d-flex align-items-center" data-id="@sub.Id">
+
+
+
+                                                <div style="flex:1; min-width:160px;">
+
+
+
+                                                    <div style="font-weight:700; color:var(--foreground)">@sub.Name</div>
+
+
+
+                                                    <div class="tree-slug">@sub.Slug</div>
+
+
+
+                                                </div>
+
+
+
+                                                <div class="muted">ترتيب: <strong>@sub.SortOrder</strong></div>
+
+
+
+                                                <div class="ms-2">
+
+
+
+                                                    <span class="badge-pill" style="background:@(sub.IsActive?"var(--success-bg)":"var(--danger-bg)"); color:@(sub.IsActive?"var(--success)":"var(--danger)")">@(sub.IsActive?"نشط":"معطّل")</span>
+
+
+
+                                                </div>
+
+
+
+                                                <div class="actions">
+
+
+
+                                                    <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Edit" asp-route-id="@sub.Id" class="d-inline-flex align-items-center" style="gap:6px;" onsubmit="return validateEditForm(this);">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="text" name="name" class="form-control form-control-sm edit-name-input" value="@sub.Name" style="display:none; max-width:150px;" />
+                                                        <input type="hidden" name="isActive" value="@sub.IsActive.ToString().ToLower()" />
+                                                        <input type="hidden" name="sortOrder" value="@sub.SortOrder" />
+                                                        <button type="button" class="btn btn-sm" onclick="toggleEditInput(this);" title="تعديل"><i class="bi bi-pencil"></i></button>
+                                                        <button type="submit" class="btn btn-sm btn-success edit-save-btn" style="display:none;" title="حفظ"><i class="bi bi-check-lg"></i></button>
+                                                    </form>
+
+
+
+                                                    <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Toggle" asp-route-id="@sub.Id" onsubmit="return false;" class="d-inline">
+
+
+
+                                                        @Html.AntiForgeryToken()
+
+
+
+                                                        <button type="button" class="btn btn-sm" onclick="toggleCategoryActive(@sub.Id, !@sub.IsActive)" title="تبديل الحالة"><i class="bi @(sub.IsActive?"bi-toggle-on":"bi-toggle-off")"></i></button>
+
+
+
+                                                    </form>
+
+
+
+                                                    <form method="post" asp-area="Admin" asp-controller="AdminCategories" asp-action="Delete" asp-route-id="@sub.Id" onsubmit="return confirm('هل تريد حذف هذا القسم الفرعي؟');" class="d-inline">
+
+
+
+                                                        @Html.AntiForgeryToken()
+
+
+
+                                                        <button type="submit" class="btn btn-sm" title="حذف" style="color: var(--danger); border: 1px solid var(--danger); background: transparent;"><i class="bi bi-trash"></i></button>
+
+
+
+                                                    </form>
+
+
+
+                                                </div>
+
+
+
+                                            </div>
+
+
+
+                                        }
+
+
+
+                                    }
+
+
+
+                                    else
+
+
+
+                                    {
+
+
+
+                                        <div class="muted small">لا توجد أقسام فرعية</div>
+
+
+
+                                    }
+
+
+
+                                </div>
+
+
+
+                            </div>
+
+
+
+                        }
+
+
+
+                    </div>
+
+
+
+                }
+
+
+
+                else
+
+
+
+                {
+
+
+
+                    <div class="empty-state">
+
+
+
+                        <i class="bi bi-inbox fs-1 d-block mb-2" style="color:var(--muted-foreground)"></i>
+
+
+
+                        <div>لا توجد أقسام حتى الآن</div>
+
+
+
+                    </div>
+
+
+
+                }
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+
+@section Scripts {
+
+
+
+    <script>
+
+
+
+        function toggleSub(parentId) {
+            var el = document.getElementById('subs-' + parentId);
+            if (!el) return;
+            var isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? '' : 'none';
+            var chev = document.querySelector('.tree-row[data-id="' + parentId + '"] .chev i');
+            if (chev) {
+                chev.className = isHidden ? 'bi bi-chevron-down' : 'bi bi-chevron-left';
+            }
+        }
+
+        function toggleCategoryActive(categoryId, isActive) {
+            var baseUrl = '@Url.Action("Toggle", "AdminCategories", new { area = "Admin" })';
+            fetchWithCsrf(baseUrl + '/' + categoryId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: isActive })
+            }).then(response => {
+                if (response.ok) {
+                    showToast('تم تحديث الحالة بنجاح', 'success');
+                    document.querySelectorAll('[data-id="' + categoryId + '"] input[name="isActive"]')
+                        .forEach(el => el.value = isActive.toString().toLowerCase());
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('حدث خطأ أثناء التحديث', 'error');
+                }
+            }).catch(() => showToast('حدث خطأ أثناء التحديث', 'error'));
+        }
+
+
+
+
+
+
+
+        function toggleEditInput(btn) {
+
+
+
+            const form = btn.closest('form');
+
+
+
+            const input = form.querySelector('.edit-name-input');
+
+
+
+            const saveBtn = form.querySelector('.edit-save-btn');
+
+
+
+            input.style.display = input.style.display === 'none' ? 'block' : 'none';
+
+
+
+            saveBtn.style.display = saveBtn.style.display === 'none' ? 'inline-flex' : 'none';
+
+
+
+            if (input.style.display === 'block') input.focus();
+
+
+
+        }
+
+
+
+
+
+
+
+        function validateEditForm(form) {
+
+
+
+            const input = form.querySelector('.edit-name-input');
+
+
+
+            if (!input.value.trim()) {
+
+
+
+                alert('اسم القسم مطلوب');
+
+
+
+                return false;
+
+
+
+            }
+
+
+
+            return true;
+
+
+
+        }
+
+
+
+    </script>
+
+
+
+}
+
+
+

@@ -1,0 +1,212 @@
+@model TellaStore.Models.ViewModels.Admin.DiscountFormViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "تعديل الخصم";
+}
+
+<style>
+  .center-card { max-width:780px; margin:0 auto; }
+  .card { background:var(--card-background); border:1px solid var(--border-color); border-radius:12px; box-shadow:var(--shadow-sm); overflow:hidden; }
+  .card-body { padding:1.25rem; }
+  .card-header { padding:0.85rem 1.25rem; background:var(--background-secondary); border-bottom:1px solid var(--border-color); font-weight:700; color:var(--foreground); }
+  .form-label { color:var(--foreground); font-weight:500; }
+  .form-control, .form-select { background:var(--background); border:1px solid var(--border-color); color:var(--foreground); border-radius:6px; }
+  .type-grid { display:flex; gap:0.75rem; }
+  .type-card { flex:1; padding:12px; border:1px solid var(--border-color); border-radius:8px; background:transparent; cursor:pointer; display:flex; gap:0.75rem; align-items:flex-start; }
+  .type-card .icon { width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .type-card h6 { margin:0; font-weight:800; }
+  .type-card p { margin:4px 0 0; font-size:0.9rem; color:var(--muted-foreground); }
+  .btn-check:checked + .type-card { border-color:var(--theme-accent); background:rgba(var(--theme-accent-rgb),0.06); }
+  .input-group .form-control { border-top-right-radius:6px; border-bottom-right-radius:6px; }
+  .generate-btn { border:1px solid var(--border-color); background:transparent; color:var(--foreground); border-radius:6px; padding:6px 8px; }
+  .checklist { max-height:220px; overflow:auto; border:1px solid var(--border-color); border-radius:6px; padding:8px; background:var(--background); }
+  .checklist .form-check { margin-bottom:6px; }
+  .form-footer { margin-top:1rem; display:flex; gap:0.5rem; justify-content:center; align-items:center; }
+  .usage-box { display:flex; gap:0.75rem; align-items:center; padding:10px; border-radius:8px; background:var(--background); border:1px solid var(--border-color); margin-bottom:12px; }
+  .usage-icon { width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#2563EB; background:#EFF6FF; }
+  @@media (max-width:767px) { .type-grid { flex-direction:column; } }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <h5 class="mb-0 fw-bold" style="color: var(--foreground); font-weight: 700">تعديل الخصم: @Model.Name</h5>
+    <a asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Index" class="btn" style="border: 1px solid var(--border-color); color: var(--foreground); border-radius: var(--radius-sm)">
+        <i class="bi bi-arrow-right me-1"></i>رجوع
+    </a>
+</div>
+
+<div class="center-card">
+  <div class="card">
+    <div class="card-body">
+      <!-- Usage stats -->
+      <div class="usage-box">
+        <div class="usage-icon"><i class="bi bi-bar-chart"></i></div>
+        <div>
+          <div style="font-weight:800; color:var(--foreground)">استخدام الكود</div>
+          <div class="muted">تم استخدام هذا الخصم <strong>@(Model.UsageCount ?? 0)</strong> مرة</div>
+        </div>
+      </div>
+
+      <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+        <div class="mb-3">
+          <label asp-for="Name" class="form-label">اسم الخصم <span class="text-danger">*</span></label>
+          <input asp-for="Name" class="form-control" placeholder="اسم الخصم" />
+          <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">نوع الخصم</label>
+          <div class="type-grid">
+<input asp-for="Type" class="btn-check" type="radio" value="0" id="typePercent" autocomplete="off" />
+<label class="type-card" for="typePercent">
+              <div class="icon" style="background:rgba(59,130,246,0.12); color:#2563EB;"><i class="bi bi-percent"></i></div>
+              <div>
+                <h6>نسبة مئوية</h6>
+                <p>خصم بنسبة من الإجمالي</p>
+              </div>
+            </label>
+
+<input asp-for="Type" class="btn-check" type="radio" value="1" id="typeFixed" autocomplete="off" />
+<label class="type-card" for="typeFixed">
+              <div class="icon" style="background:rgba(245,158,11,0.12); color:#D97706;"><i class="bi bi-cash"></i></div>
+              <div>
+                <h6>مبلغ ثابت</h6>
+                <p>خصم بمبلغ محدد</p>
+              </div>
+            </label>
+
+<input asp-for="Type" class="btn-check" type="radio" value="2" id="typeFreeShip" autocomplete="off" />
+<label class="type-card" for="typeFreeShip">
+              <div class="icon" style="background:rgba(124,58,237,0.12); color:#7C3AED;"><i class="bi bi-truck"></i></div>
+              <div>
+                <h6>شحن مجاني</h6>
+                <p>إلغاء رسوم التوصيل</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label asp-for="Code" class="form-label">كود الخصم</label>
+          <div class="input-group">
+            <input asp-for="Code" class="form-control" placeholder="مثال: TELLASALE" />
+            <button type="button" class="generate-btn" onclick="generateCode()">توليد كود عشوائي</button>
+          </div>
+          <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label asp-for="Value" class="form-label">القيمة <span class="text-danger">*</span></label>
+            <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" />
+            <span asp-validation-for="Value" class="text-danger"></span>
+          </div>
+          <div class="col-md-6">
+            <label asp-for="MinimumOrderAmount" class="form-label">الحد الأدنى للطلب</label>
+            <div class="input-group">
+              <input asp-for="MinimumOrderAmount" class="form-control" type="number" step="0.01" min="0" />
+              <span class="input-group-text">ج</span>
+            </div>
+            <span asp-validation-for="MinimumOrderAmount" class="text-danger"></span>
+          </div>
+
+          <div class="col-md-6">
+            <label asp-for="StartDate" class="form-label">تاريخ البدء</label>
+@{ var startDateVal = Model.StartDate?.ToString("yyyy-MM-dd") ?? ""; }
+<input asp-for="StartDate" class="form-control" type="date" value="@startDateVal" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+          </div>
+          <div class="col-md-6">
+            <label asp-for="EndDate" class="form-label">تاريخ الانتهاء</label>
+@{ var endDateVal = Model.EndDate?.ToString("yyyy-MM-dd") ?? ""; }
+<input asp-for="EndDate" class="form-control" type="date" value="@endDateVal" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check">
+              <input asp-for="IsActive" class="form-check-input" id="IsActive" />
+              <label asp-for="IsActive" class="form-check-label">نشط</label>
+            </div>
+          </div>
+        </div>
+
+        <hr />
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">المنتجات المطبقة</label>
+            <input type="text" id="productSearch" class="form-control mb-2" placeholder="ابحث باسم المنتج..." oninput="filterChecklist('productSearch','productsList')" />
+            <div id="productsList" class="checklist">
+              @if (Model.Products != null)
+              {
+                foreach (var p in Model.Products)
+                {
+                  var checkedAttr = Model.SelectedProductIds != null && Model.SelectedProductIds.Contains(p.Id) ? "checked" : "";
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="SelectedProductIds" value="@p.Id" id="prod_@p.Id" @checkedAttr />
+                    <label class="form-check-label" for="prod_@p.Id">@p.Name</label>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">الأقسام المطبقة</label>
+            <input type="text" id="categorySearch" class="form-control mb-2" placeholder="ابحث باسم القسم..." oninput="filterChecklist('categorySearch','categoriesList')" />
+            <div id="categoriesList" class="checklist">
+              @if (Model.Categories != null)
+              {
+                foreach (var c in Model.Categories)
+                {
+                  var chk = Model.SelectedCategoryIds != null && Model.SelectedCategoryIds.Contains(c.Id) ? "checked" : "";
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="SelectedCategoryIds" value="@c.Id" id="cat_@c.Id" @chk />
+                    <label class="form-check-label" for="cat_@c.Id">@c.Name</label>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <a asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Index" class="btn" style="border:1px solid var(--border-color); color:var(--muted-foreground)">إلغاء</a>
+          <button type="submit" class="btn btn-accent" style="background:var(--theme-accent); color:#fff; padding:10px 18px;">حفظ التعديلات</button>
+        </div>
+      </form>
+
+      <!-- Delete Form -->
+      <form method="post" asp-area="Admin" asp-controller="AdminDiscounts" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('هل أنت متأكد من حذف هذا الخصم؟ لا يمكن التراجع!');" style="margin-top:12px;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="confirm" value="true" />
+        <button type="submit" class="btn" style="border:1px solid var(--danger); color:var(--danger); background:transparent; width:100%">حذف الخصم</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+function generateCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    const el = document.querySelector('[name="Code"]');
+    if (el) el.value = code;
+}
+
+function filterChecklist(searchId, listId) {
+    const q = document.getElementById(searchId).value.toLowerCase();
+    const list = document.getElementById(listId);
+    if (!list) return;
+    Array.from(list.querySelectorAll('.form-check')).forEach(div => {
+        const label = div.querySelector('label').textContent.toLowerCase();
+        div.style.display = label.includes(q) ? '' : 'none';
+    });
+}
+</script>
+}
